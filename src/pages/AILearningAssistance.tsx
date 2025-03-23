@@ -1,11 +1,10 @@
-
 import React from 'react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Brain, BookOpen, Sparkles, MessageSquare, Robot, Lightbulb, Video } from 'lucide-react';
+import { Brain, BookOpen, Sparkles, MessageSquare, Bot, Lightbulb, Video } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -86,7 +85,7 @@ const AILearningAssistance = () => {
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center text-lg">
-                    <Robot className="mr-2 h-5 w-5 text-primary" />
+                    <Bot className="mr-2 h-5 w-5 text-primary" />
                     Writing Coach
                   </CardTitle>
                   <CardDescription>

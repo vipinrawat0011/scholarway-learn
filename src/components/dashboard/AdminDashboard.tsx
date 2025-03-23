@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, FileText, BookOpen, AlertTriangle, CheckCircle, Settings, User, School, Robot, Award, Trophy, Star, Brain } from 'lucide-react';
+import { Users, FileText, BookOpen, AlertTriangle, CheckCircle, Settings, User, School, Bot, Award, Trophy, Star, Brain } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Link } from 'react-router-dom';
 
