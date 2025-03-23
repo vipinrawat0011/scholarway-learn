@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -37,6 +36,14 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
+// Define the type for menu items including the optional badge property
+interface MenuItem {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  href: string;
+  badge?: string;
+}
+
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -57,8 +64,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   };
 
   // Different menu items based on user role
-  const getDashboardMenu = () => {
-    const commonItems = [
+  const getDashboardMenu = (): MenuItem[] => {
+    const commonItems: MenuItem[] = [
       {
         icon: Home,
         label: 'Dashboard',

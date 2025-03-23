@@ -77,6 +77,7 @@ const SAMPLE_USERS: UserProfile[] = [
   }
 ];
 
+// Define AuthProvider as a proper functional component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
