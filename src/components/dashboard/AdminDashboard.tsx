@@ -419,7 +419,7 @@ const AdminDashboard = () => {
               
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                  <Robot className="h-5 w-5 text-indigo-500" />
+                  <Bot className="h-5 w-5 text-indigo-500" />
                   <span>Study Assistants Active</span>
                 </div>
                 <span className="font-medium">87 students</span>
