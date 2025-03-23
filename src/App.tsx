@@ -12,6 +12,9 @@ import Courses from "./pages/Courses";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import CourseContent from "./components/courses/CourseContent";
+import Tests from "./pages/Tests";
+import TestExam from "./pages/TestExam";
+import TestResults from "./pages/TestResults";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +32,9 @@ const App = () => (
             <Route path="/courses" element={<Courses />} />
             <Route path="/course/:id" element={<CourseContent />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/tests" element={<Tests />} />
+            <Route path="/test/:testId" element={<TestExam />} />
+            <Route path="/test-results/:testId" element={<TestResults />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

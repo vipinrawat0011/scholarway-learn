@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { GraduationCap, Send, Sparkles, Clock, BookOpen, FileText, X, Maximize, Minimize, Zap } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface Message {
   id: string;
@@ -27,7 +28,9 @@ const AIAssistant = () => {
   const [input, setInput] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
   
   useEffect(() => {
     scrollToBottom();
@@ -88,6 +91,17 @@ const AIAssistant = () => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const handleClose = () => {
+    setIsVisible(false);
+    toast({
+      title: "AI Assistant closed",
+      description: "You can reopen it from the dashboard menu.",
+      duration: 3000,
+    });
+  };
+
+  if (!isVisible) return null;
+
   return (
     <Card className={`fixed bottom-4 right-4 w-80 shadow-lg transition-all duration-300 z-50 ${
       isExpanded ? 'h-[500px] w-[400px]' : 'h-[450px]'
@@ -120,7 +134,7 @@ const AIAssistant = () => {
               <Maximize className="h-4 w-4" />
             </Button>
           )}
-          <Button variant="ghost" size="icon" className="h-7 w-7">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleClose}>
             <X className="h-4 w-4" />
           </Button>
         </div>
