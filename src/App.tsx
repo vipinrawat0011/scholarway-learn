@@ -15,6 +15,8 @@ import CourseContent from "./components/courses/CourseContent";
 import Tests from "./pages/Tests";
 import TestExam from "./pages/TestExam";
 import TestResults from "./pages/TestResults";
+import AILearningAssistance from "./pages/AILearningAssistance";
+import StudentClassification from "./pages/StudentClassification";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +37,8 @@ const App = () => (
             <Route path="/tests" element={<Tests />} />
             <Route path="/test/:testId" element={<TestExam />} />
             <Route path="/test-results/:testId" element={<TestResults />} />
+            <Route path="/ai-learning" element={<AILearningAssistance />} />
+            <Route path="/student-classification" element={<StudentClassification />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

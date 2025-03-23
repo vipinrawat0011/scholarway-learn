@@ -1,12 +1,12 @@
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, FileText, BookOpen, AlertTriangle, CheckCircle, Settings, User, School } from 'lucide-react';
+import { Users, FileText, BookOpen, AlertTriangle, CheckCircle, Settings, User, School, Robot, Award, Trophy, Star, Brain } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Link } from 'react-router-dom';
 
 // Dummy data
 const pendingApprovals = [
@@ -352,7 +352,97 @@ const AdminDashboard = () => {
         </TabsContent>
       </Tabs>
       
-      <Card className="animate-slide-in-up" style={{ animationDelay: '0.6s' }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slide-in-up" style={{ animationDelay: '0.6s' }}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Student Classification</CardTitle>
+            <CardDescription>Scholar level distribution across classes</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <School className="h-5 w-5 text-blue-500" />
+                  <span>Junior Scholars</span>
+                </div>
+                <span className="font-medium">178 students</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Star className="h-5 w-5 text-amber-500" />
+                  <span>Rising Intellects</span>
+                </div>
+                <span className="font-medium">156 students</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-green-500" />
+                  <span>Mastermind Elite</span>
+                </div>
+                <span className="font-medium">146 students</span>
+              </div>
+            </div>
+            
+            <div className="h-2 rounded-full bg-gray-100 mt-6 overflow-hidden">
+              <div className="flex h-full">
+                <div className="h-full bg-blue-500" style={{ width: '37%' }}></div>
+                <div className="h-full bg-amber-500" style={{ width: '32%' }}></div>
+                <div className="h-full bg-green-500" style={{ width: '31%' }}></div>
+              </div>
+            </div>
+            
+            <div className="mt-6">
+              <Button asChild className="w-full">
+                <Link to="/student-classification">Manage Classification</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>AI Learning Assistance</CardTitle>
+            <CardDescription>AI-powered learning tools for students</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Brain className="h-5 w-5 text-purple-500" />
+                  <span>AI Tutoring Sessions</span>
+                </div>
+                <span className="font-medium">248 completed</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Robot className="h-5 w-5 text-indigo-500" />
+                  <span>Study Assistants Active</span>
+                </div>
+                <span className="font-medium">87 students</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Award className="h-5 w-5 text-pink-500" />
+                  <span>Improvement Rate</span>
+                </div>
+                <span className="font-medium">+18.5% avg</span>
+              </div>
+            </div>
+            
+            <div className="mt-6">
+              <Button asChild className="w-full">
+                <Link to="/ai-learning">Manage AI Learning</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <Card className="animate-slide-in-up" style={{ animationDelay: '0.7s' }}>
         <CardHeader>
           <CardTitle>System Status</CardTitle>
           <CardDescription>Current system performance and metrics</CardDescription>
