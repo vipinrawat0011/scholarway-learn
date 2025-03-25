@@ -28,7 +28,9 @@ import {
   Settings,
   Shield,
   BookMarked,
-  GraduationCap
+  GraduationCap,
+  Lock,
+  Database
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -54,11 +56,17 @@ const systemHealthData = [
   { name: 'Database', usage: 58, limit: 100 },
 ];
 
+const roleManagementData = [
+  { name: 'Student Access Grants', count: 32, trend: 'up' },
+  { name: 'Teacher Access Grants', count: 18, trend: 'up' },
+  { name: 'Admin Access Grants', count: 5, trend: 'down' },
+  { name: 'Permission Changes', count: 47, trend: 'up' },
+  { name: 'Role Reassignments', count: 12, trend: 'stable' },
+];
+
 const SuperadminDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
-
-  const COLORS = ['#16a34a', '#2563eb', '#7c3aed', '#ea580c'];
 
   const recentActions = [
     { action: 'Updated permission for Teacher role', time: '10 minutes ago', user: 'You' },
@@ -72,7 +80,7 @@ const SuperadminDashboard = () => {
     { 
       title: 'User Management', 
       icon: <UserCog className="h-8 w-8 text-indigo-500" />, 
-      description: 'Manage users, roles, and permissions',
+      description: 'Manage all user accounts across the platform',
       path: '/user-management'
     },
     { 
@@ -99,19 +107,25 @@ const SuperadminDashboard = () => {
       description: 'Manage student categorization and groups',
       path: '/student-classification'
     },
+    { 
+      title: 'System Settings', 
+      icon: <Settings className="h-8 w-8 text-purple-500" />, 
+      description: 'Configure global application settings',
+      path: '/system-settings'
+    },
   ];
 
   return (
     <div className="container mx-auto p-4 space-y-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Superadmin Dashboard</h1>
+        <h1 className="text-3xl font-bold">Superadmin Control Panel</h1>
         <div className="flex items-center space-x-2">
           <Shield className="h-5 w-5 text-purple-600" />
           <span className="text-sm font-medium text-purple-600">Superadmin Access</span>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardContent className="p-6 flex items-center space-x-4">
             <div className="p-3 rounded-full bg-green-100">
@@ -144,6 +158,19 @@ const SuperadminDashboard = () => {
             <div>
               <p className="text-sm text-muted-foreground">Total Admins</p>
               <h3 className="text-2xl font-bold">10</h3>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6 flex items-center space-x-4">
+            <div className="p-3 rounded-full bg-red-100">
+              <Lock className="h-6 w-6 text-red-600" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Role Changes</p>
+              <h3 className="text-2xl font-bold">47</h3>
+              <span className="text-xs text-green-600">+12% this week</span>
             </div>
           </CardContent>
         </Card>
@@ -208,6 +235,7 @@ const SuperadminDashboard = () => {
       <Tabs defaultValue="quickAccess" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="quickAccess">Quick Access</TabsTrigger>
+          <TabsTrigger value="roleManagement">Role Management</TabsTrigger>
           <TabsTrigger value="recentActivity">Recent Activity</TabsTrigger>
           <TabsTrigger value="systemHealth">System Health</TabsTrigger>
         </TabsList>
@@ -228,6 +256,47 @@ const SuperadminDashboard = () => {
               </Card>
             ))}
           </div>
+        </TabsContent>
+        
+        <TabsContent value="roleManagement">
+          <Card>
+            <CardContent className="p-6">
+              <div className="space-y-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">Role Management Activity</h3>
+                  <Badge variant="outline" className="bg-purple-100 text-purple-800 hover:bg-purple-200">
+                    Superadmin Only
+                  </Badge>
+                </div>
+                {roleManagementData.map((item, index) => (
+                  <div key={index} className="flex justify-between items-center pb-4 border-b last:border-0 last:pb-0">
+                    <div>
+                      <p className="font-medium">{item.name}</p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge variant={
+                          item.trend === 'up' ? 'default' : 
+                          item.trend === 'down' ? 'destructive' : 'outline'
+                        }>
+                          {item.count}
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {item.trend === 'up' && '↑ Increasing'}
+                          {item.trend === 'down' && '↓ Decreasing'}
+                          {item.trend === 'stable' && '→ Stable'}
+                        </span>
+                      </div>
+                    </div>
+                    <button 
+                      className="px-3 py-1 rounded-md bg-primary/10 text-primary text-sm hover:bg-primary/20"
+                      onClick={() => navigate('/permission-manager')}
+                    >
+                      Manage
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
         
         <TabsContent value="recentActivity">
