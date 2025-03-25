@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm, SubmitHandler } from 'react-hook-form';
@@ -238,9 +237,23 @@ const UserManagement = () => {
     toast.success('User updated successfully');
   };
 
+  // Restrict editing or deleting superadmin users if current user is not a superadmin
+  const canModifyUser = (targetUser: User) => {
+    if (targetUser.role === 'superadmin' && user?.role !== 'superadmin') {
+      return false;
+    }
+    return true;
+  };
+
   // Handle user deletion
   const handleDeleteUser = () => {
     if (!selectedUser) return;
+    
+    if (!canModifyUser(selectedUser)) {
+      toast.error("You don't have permission to delete a superadmin account");
+      setDeleteDialogOpen(false);
+      return;
+    }
     
     setUsers(users.filter(u => u.id !== selectedUser.id));
     setDeleteDialogOpen(false);
@@ -250,6 +263,11 @@ const UserManagement = () => {
 
   // Open edit dialog and populate form with user data
   const handleEditUser = (user: User) => {
+    if (!canModifyUser(user)) {
+      toast.error("You don't have permission to edit a superadmin account");
+      return;
+    }
+    
     setSelectedUser(user);
     editForm.reset({
       name: user.name,
@@ -263,6 +281,11 @@ const UserManagement = () => {
 
   // Open delete confirmation dialog
   const handleDeleteDialog = (user: User) => {
+    if (!canModifyUser(user)) {
+      toast.error("You don't have permission to delete a superadmin account");
+      return;
+    }
+    
     setSelectedUser(user);
     setDeleteDialogOpen(true);
   };
@@ -489,54 +512,59 @@ const UserManagement = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
+                  {filteredUsers.map((userItem) => (
+                    <TableRow key={userItem.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar>
-                            <AvatarImage src={user.avatarUrl} />
-                            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                            <AvatarImage src={userItem.avatarUrl} />
+                            <AvatarFallback>{getInitials(userItem.name)}</AvatarFallback>
                           </Avatar>
-                          <span>{user.name}</span>
+                          <span>{userItem.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{userItem.email}</TableCell>
                       <TableCell>
-                        <Badge className={getRoleBadgeVariant(user.role)}>{user.role}</Badge>
+                        <Badge className={getRoleBadgeVariant(userItem.role)}>{userItem.role}</Badge>
                       </TableCell>
                       <TableCell>
-                        {user.role === 'student' && user.class && (
+                        {userItem.role === 'student' && userItem.class && (
                           <div className="text-sm">
-                            Class: {user.class}
-                            {user.scholarLevel && (
+                            Class: {userItem.class}
+                            {userItem.scholarLevel && (
                               <Badge variant="outline" className="ml-2">
-                                {user.scholarLevel === 'junior' && 'Junior Scholar'}
-                                {user.scholarLevel === 'rising' && 'Rising Intellect'}
-                                {user.scholarLevel === 'elite' && 'Mastermind Elite'}
+                                {userItem.scholarLevel === 'junior' && 'Junior Scholar'}
+                                {userItem.scholarLevel === 'rising' && 'Rising Intellect'}
+                                {userItem.scholarLevel === 'elite' && 'Mastermind Elite'}
                               </Badge>
                             )}
                           </div>
                         )}
-                        {user.role === 'teacher' && user.department && (
-                          <div className="text-sm">Department: {user.department}</div>
+                        {userItem.role === 'teacher' && userItem.department && (
+                          <div className="text-sm">Department: {userItem.department}</div>
                         )}
                       </TableCell>
-                      <TableCell>{user.dateAdded}</TableCell>
+                      <TableCell>{userItem.dateAdded}</TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              disabled={userItem.role === 'superadmin' && user?.role !== 'superadmin'} 
+                              className={userItem.role === 'superadmin' && user?.role !== 'superadmin' ? 'opacity-50 cursor-not-allowed' : ''}
+                            >
                               <MoreVertical className="h-4 w-4" />
                               <span className="sr-only">Open menu</span>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                            <DropdownMenuItem onClick={() => handleEditUser(userItem)}>
                               <Pencil className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem 
-                              onClick={() => handleDeleteDialog(user)}
+                              onClick={() => handleDeleteDialog(userItem)}
                               className="text-destructive"
                             >
                               <Trash className="mr-2 h-4 w-4" />

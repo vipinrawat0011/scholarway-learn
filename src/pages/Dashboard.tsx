@@ -43,9 +43,9 @@ const Dashboard = () => {
   // Check if user has permission to access their role-specific dashboard
   const dashboardId = `${user?.role}-dashboard`;
   
-  // Fixed the type comparison here - this was causing the error
+  // Fixed the type comparison here - use type guard to avoid TypeScript error
   const dashboardPermission = user?.role && user.role !== 'superadmin' ? 
-    hasPermission(user.role, dashboardId) : 
+    hasPermission(user.role === 'student' || user.role === 'teacher' || user.role === 'admin' ? user.role : 'student', dashboardId) : 
     false;
   
   if (!dashboardPermission) {

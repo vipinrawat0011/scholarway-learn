@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, Shield } from 'lucide-react';
 
 const Login = () => {
   const { login, isLoading } = useAuth();
@@ -37,6 +37,7 @@ const Login = () => {
     { email: 'student@example.com', role: 'Student' },
     { email: 'teacher@example.com', role: 'Teacher' },
     { email: 'admin@example.com', role: 'Admin' },
+    { email: 'superadmin@example.com', role: 'Superadmin', highlightColor: 'bg-red-500 text-white hover:bg-red-600' }
   ];
 
   return (
@@ -105,19 +106,26 @@ const Login = () => {
             <div className="text-sm text-muted-foreground text-center">
               Test accounts for demo:
             </div>
-            <div className="grid grid-cols-3 gap-2 w-full">
+            <div className="grid grid-cols-4 gap-2 w-full">
               {testAccounts.map((account) => (
                 <Button
                   key={account.email}
-                  variant="outline"
+                  variant={account.highlightColor ? "default" : "outline"}
                   size="sm"
-                  className="text-xs h-auto py-1"
+                  className={`text-xs h-auto py-1 ${account.highlightColor || ''}`}
                   onClick={() => {
                     setLoginEmail(account.email);
                     setLoginPassword('password');
                   }}
                 >
-                  {account.role}
+                  {account.role === 'Superadmin' ? (
+                    <span className="flex items-center">
+                      <Shield className="mr-1 h-3 w-3" />
+                      {account.role}
+                    </span>
+                  ) : (
+                    account.role
+                  )}
                 </Button>
               ))}
             </div>
