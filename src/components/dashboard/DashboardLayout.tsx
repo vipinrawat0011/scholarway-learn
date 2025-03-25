@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Sidebar,
@@ -29,8 +29,9 @@ import {
   Clock,
   CheckCircle,
   LogOut,
+  Shield,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 
 interface DashboardLayoutProps {
@@ -43,11 +44,24 @@ interface MenuItem {
   label: string;
   href: string;
   badge?: string;
+  id: string; // Permission ID to check
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, hasPermission } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // If user doesn't have permission to access the current dashboard, redirect to login
+    if (user && user.role !== 'superadmin') {
+      const dashboardPermissionId = `${user.role}-dashboard`;
+      if (!hasPermission(user.role as 'student' | 'teacher' | 'admin', dashboardPermissionId)) {
+        logout();
+        navigate('/login');
+      }
+    }
+  }, [user, hasPermission, logout, navigate]);
 
   // Get user initials for avatar fallback
   const getInitials = (name: string) => {
@@ -70,81 +84,138 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       {
         icon: Home,
         label: 'Dashboard',
-        href: '/dashboard'
+        href: '/dashboard',
+        id: `${user?.role}-dashboard`
       },
       {
         icon: Book,
         label: 'Courses',
-        href: '/courses'
+        href: '/courses',
+        id: `${user?.role}-courses`
       },
       {
         icon: Calendar,
         label: 'Schedule',
-        href: '/schedule'
+        href: '/schedule',
+        id: `${user?.role}-schedule`
       },
     ];
 
-    // Student-specific menu items
-    if (user?.role === 'student') {
+    // Superadmin menu items
+    if (user?.role === 'superadmin') {
       return [
         ...commonItems,
         {
+          icon: Shield,
+          label: 'Permission Manager',
+          href: '/permission-manager',
+          id: 'superadmin-permission-manager'
+        },
+        {
+          icon: Users,
+          label: 'User Management',
+          href: '/user-management',
+          id: 'superadmin-user-management'
+        },
+        {
+          icon: Settings,
+          label: 'System Settings',
+          href: '/system-settings',
+          id: 'superadmin-system-settings'
+        }
+      ];
+    }
+
+    // Student-specific menu items
+    if (user?.role === 'student') {
+      const studentItems: MenuItem[] = [
+        {
           icon: CheckCircle,
           label: 'Progress',
-          href: '/progress'
+          href: '/progress',
+          id: 'student-progress'
         },
         {
           icon: Clock,
           label: 'Upcoming Tests',
           href: '/tests',
-          badge: '2'
+          badge: '2',
+          id: 'student-tests'
         }
+      ];
+
+      // Filter based on permissions
+      return [
+        ...commonItems,
+        ...studentItems.filter(item => 
+          hasPermission('student', item.id)
+        )
       ];
     }
 
     // Teacher-specific menu items
     if (user?.role === 'teacher') {
-      return [
-        ...commonItems,
+      const teacherItems: MenuItem[] = [
         {
           icon: FileText,
           label: 'Study Materials',
-          href: '/materials'
+          href: '/materials',
+          id: 'teacher-materials'
         },
         {
           icon: Users,
           label: 'Students',
-          href: '/students'
+          href: '/students',
+          id: 'teacher-students'
         },
         {
           icon: Clock,
           label: 'Exams',
-          href: '/exams'
+          href: '/exams',
+          id: 'teacher-exams'
         }
+      ];
+
+      // Filter based on permissions
+      return [
+        ...commonItems,
+        ...teacherItems.filter(item => 
+          hasPermission('teacher', item.id)
+        )
       ];
     }
 
     // Admin-specific menu items
     if (user?.role === 'admin') {
-      return [
-        ...commonItems,
+      const adminItems: MenuItem[] = [
         {
           icon: Users,
           label: 'User Section',
-          href: '/user-management'
+          href: '/user-management',
+          id: 'admin-user-section'
         },
         {
           icon: FileText,
           label: 'Content Review',
           href: '/content-review',
-          badge: '5'
+          badge: '5',
+          id: 'admin-content-review'
         },
         {
           icon: CheckCircle,
           label: 'Approvals',
           href: '/approvals',
-          badge: '3'
+          badge: '3',
+          id: 'admin-approvals'
         }
+      ];
+
+      // Filter based on permissions
+      return [
+        ...commonItems,
+        ...adminItems.filter(item => 
+          hasPermission('admin', item.id)
+        )
       ];
     }
 

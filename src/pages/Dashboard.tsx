@@ -4,12 +4,13 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import StudentDashboard from '@/components/dashboard/StudentDashboard';
 import TeacherDashboard from '@/components/dashboard/TeacherDashboard';
 import AdminDashboard from '@/components/dashboard/AdminDashboard';
+import SuperadminDashboard from '@/components/dashboard/SuperadminDashboard';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import AIAssistant from '@/components/ai/AIAssistant';
 
 const Dashboard = () => {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, hasPermission } = useAuth();
   
   // Show loading state
   if (isLoading) {
@@ -27,6 +28,41 @@ const Dashboard = () => {
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
+  }
+  
+  // If user is a superadmin, render the superadmin dashboard
+  if (user?.role === 'superadmin') {
+    return (
+      <DashboardLayout>
+        <SuperadminDashboard />
+        <AIAssistant />
+      </DashboardLayout>
+    );
+  }
+  
+  // Check if user has permission to access their role-specific dashboard
+  const dashboardId = `${user?.role}-dashboard`;
+  const dashboardPermission = user?.role && user.role !== 'superadmin' ? 
+    hasPermission(user.role as 'student' | 'teacher' | 'admin', dashboardId) : 
+    false;
+  
+  if (!dashboardPermission) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center p-6 max-w-md">
+          <h1 className="text-2xl font-bold mb-4">Access Restricted</h1>
+          <p className="text-muted-foreground mb-6">
+            You don't have permission to access this dashboard. Please contact your administrator.
+          </p>
+          <button 
+            onClick={() => window.location.href = '/login'} 
+            className="px-4 py-2 rounded bg-primary text-white"
+          >
+            Return to Login
+          </button>
+        </div>
+      </div>
+    );
   }
   
   // Render dashboard based on user role

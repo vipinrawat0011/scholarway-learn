@@ -1,503 +1,416 @@
+
 import React, { useState } from 'react';
+import { z } from 'zod';
+import { useForm, SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import DashboardLayout from '@/components/dashboard/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { PlusCircle, MoreVertical, User, Trash, Pencil, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { Search, Filter, UserPlus, Trash2, Edit, Users, User, School, Settings } from 'lucide-react';
+import DashboardLayout from '@/components/dashboard/DashboardLayout';
 
-// Create a schema for user form validation
+// Define form validation schema
 const userFormSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  email: z.string().email({ message: "Please enter a valid email address." }),
-  role: z.enum(["student", "teacher", "admin"], {
-    required_error: "Please select a role.",
+  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  email: z.string().email({ message: "Invalid email address" }),
+  role: z.enum(['student', 'teacher', 'admin', 'superadmin'], { 
+    required_error: "Please select a role" 
   }),
   class: z.string().optional(),
   department: z.string().optional(),
 });
 
-// Define a User type to fix TypeScript errors
-type User = {
+// Mock data for users
+interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
-  avatarUrl: string;
-  scholarLevel?: string;
+  role: 'student' | 'teacher' | 'admin' | 'superadmin';
+  avatarUrl?: string;
+  scholarLevel?: 'junior' | 'rising' | 'elite';
   department?: string;
-};
+  class?: string;
+  dateAdded: string;
+}
 
 const UserManagement = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  
-  // Mock user data (in a real app, this would come from API)
-  const [allUsers, setAllUsers] = useState<User[]>([
-    ...SAMPLE_USERS, // This comes from AuthContext
-    // Add more mock users for demonstration
+  const [users, setUsers] = useState<User[]>([
+    {
+      id: '1',
+      name: 'John Student',
+      email: 'student@example.com',
+      role: 'student',
+      avatarUrl: 'https://i.pravatar.cc/150?img=1',
+      scholarLevel: 'junior',
+      class: 'Class 10A',
+      dateAdded: '2023-01-15'
+    },
+    {
+      id: '2',
+      name: 'Jane Teacher',
+      email: 'teacher@example.com',
+      role: 'teacher',
+      avatarUrl: 'https://i.pravatar.cc/150?img=5',
+      department: 'Mathematics',
+      dateAdded: '2022-11-05'
+    },
+    {
+      id: '3',
+      name: 'Admin User',
+      email: 'admin@example.com',
+      role: 'admin',
+      avatarUrl: 'https://i.pravatar.cc/150?img=8',
+      dateAdded: '2022-09-20'
+    },
+    {
+      id: '4',
+      name: 'Alice Student',
+      email: 'alice@example.com',
+      role: 'student',
+      avatarUrl: 'https://i.pravatar.cc/150?img=9',
+      scholarLevel: 'rising',
+      class: 'Class 11B',
+      dateAdded: '2023-02-10'
+    },
+    {
+      id: '5',
+      name: 'Bob Student',
+      email: 'bob@example.com',
+      role: 'student',
+      avatarUrl: 'https://i.pravatar.cc/150?img=4',
+      scholarLevel: 'elite',
+      class: 'Class 12A',
+      dateAdded: '2023-01-28'
+    },
     {
       id: '6',
-      name: 'Emily Johnson',
-      email: 'emily@example.com',
-      role: 'student',
-      avatarUrl: 'https://i.pravatar.cc/150?img=10',
-      scholarLevel: 'junior'
-    },
-    {
-      id: '7',
-      name: 'Michael Smith',
-      email: 'michael@example.com',
-      role: 'teacher',
-      avatarUrl: 'https://i.pravatar.cc/150?img=11',
-      department: 'Science'
-    },
-    {
-      id: '8',
-      name: 'Sarah Williams',
-      email: 'sarah@example.com',
-      role: 'student',
+      name: 'Super Admin',
+      email: 'superadmin@example.com',
+      role: 'superadmin',
       avatarUrl: 'https://i.pravatar.cc/150?img=12',
-      scholarLevel: 'elite'
-    },
+      dateAdded: '2022-08-15'
+    }
   ]);
-  
-  // Filter and search state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
-  
-  // Dialog states
-  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
-  const [isEditUserOpen, setIsEditUserOpen] = useState(false);
-  const [isDeleteUserOpen, setIsDeleteUserOpen] = useState(false);
+
+  // States for dialogs and filters
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  
-  // Set up form
-  const form = useForm({
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string[]>([]);
+
+  // Form setup for adding user
+  const addForm = useForm<z.infer<typeof userFormSchema>>({
     resolver: zodResolver(userFormSchema),
     defaultValues: {
-      name: "",
-      email: "",
-      role: "student",
-      class: "",
-      department: "",
+      name: '',
+      email: '',
+      role: 'student',
+      class: '',
+      department: '',
     },
   });
-  
-  // Redirect if not admin
-  React.useEffect(() => {
-    if (!user || user.role !== 'admin') {
-      navigate('/dashboard');
-    }
-  }, [user, navigate]);
-  
-  // Filter users based on search and role filter
-  const filteredUsers = allUsers.filter(user => {
-    // Filter by role
-    if (roleFilter !== 'all' && user.role !== roleFilter) {
-      return false;
-    }
-    
-    // Filter by search query
-    if (searchQuery && !user.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
-        !user.email.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    
-    return true;
+
+  // Form setup for editing user
+  const editForm = useForm<z.infer<typeof userFormSchema>>({
+    resolver: zodResolver(userFormSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      role: 'student',
+      class: '',
+      department: '',
+    },
   });
-  
-  // Handler for adding a new user
-  const handleAddUser = (data: z.infer<typeof userFormSchema>) => {
+
+  // Handle add user form submission
+  const onAddSubmit: SubmitHandler<z.infer<typeof userFormSchema>> = (data) => {
     const newUser: User = {
-      id: `${allUsers.length + 1}`,
+      id: (users.length + 1).toString(),
       name: data.name,
       email: data.email,
       role: data.role,
       avatarUrl: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
-      ...(data.role === 'student' ? { scholarLevel: 'junior' } : {}),
-      ...(data.role === 'teacher' ? { department: data.department } : {}),
+      dateAdded: new Date().toISOString().split('T')[0]
     };
-    
-    setAllUsers([...allUsers, newUser]);
-    setIsAddUserOpen(false);
-    form.reset();
-    toast.success(`${data.name} has been added as a ${data.role}`);
+
+    if (data.role === 'student') {
+      newUser.class = data.class;
+      newUser.scholarLevel = 'junior';
+    } else if (data.role === 'teacher') {
+      newUser.department = data.department;
+    }
+
+    setUsers([...users, newUser]);
+    setAddDialogOpen(false);
+    addForm.reset();
+    toast.success('User added successfully');
   };
-  
-  // Handler for updating a user
-  const handleEditUser = (data: z.infer<typeof userFormSchema>) => {
+
+  // Handle edit user form submission
+  const onEditSubmit: SubmitHandler<z.infer<typeof userFormSchema>> = (data) => {
     if (!selectedUser) return;
-    
-    const updatedUsers = allUsers.map(u => {
+
+    const updatedUsers = users.map(u => {
       if (u.id === selectedUser.id) {
-        return {
+        const updatedUser: User = {
           ...u,
           name: data.name,
           email: data.email,
-          role: data.role,
-          ...(data.role === 'student' ? { scholarLevel: u.scholarLevel || 'junior', department: undefined } : {}),
-          ...(data.role === 'teacher' ? { department: data.department, scholarLevel: undefined } : {}),
-          ...(data.role === 'admin' ? { department: undefined, scholarLevel: undefined } : {}),
+          role: data.role
         };
+
+        if (data.role === 'student') {
+          updatedUser.class = data.class;
+          updatedUser.department = undefined;
+        } else if (data.role === 'teacher') {
+          updatedUser.department = data.department;
+          updatedUser.class = undefined;
+          updatedUser.scholarLevel = undefined;
+        } else {
+          updatedUser.class = undefined;
+          updatedUser.department = undefined;
+          updatedUser.scholarLevel = undefined;
+        }
+
+        return updatedUser;
       }
       return u;
     });
-    
-    setAllUsers(updatedUsers);
-    setIsEditUserOpen(false);
+
+    setUsers(updatedUsers);
+    setEditDialogOpen(false);
     setSelectedUser(null);
-    toast.success(`User updated successfully`);
+    toast.success('User updated successfully');
   };
-  
-  // Handler for deleting a user
+
+  // Handle user deletion
   const handleDeleteUser = () => {
-    if (!selectedUser || !user) return;
+    if (!selectedUser) return;
     
-    if (selectedUser.id === user.id) {
-      toast.error("You cannot delete your own account");
-      setIsDeleteUserOpen(false);
-      setSelectedUser(null);
-      return;
-    }
-    
-    const updatedUsers = allUsers.filter(u => u.id !== selectedUser.id);
-    setAllUsers(updatedUsers);
-    setIsDeleteUserOpen(false);
+    setUsers(users.filter(u => u.id !== selectedUser.id));
+    setDeleteDialogOpen(false);
     setSelectedUser(null);
-    toast.success(`User deleted successfully`);
+    toast.success('User deleted successfully');
   };
-  
-  const openEditDialog = (user: User) => {
+
+  // Open edit dialog and populate form with user data
+  const handleEditUser = (user: User) => {
     setSelectedUser(user);
-    form.reset({
+    editForm.reset({
       name: user.name,
       email: user.email,
       role: user.role,
-      class: "",
-      department: user.department || "",
+      class: user.class || '',
+      department: user.department || '',
     });
-    setIsEditUserOpen(true);
+    setEditDialogOpen(true);
   };
-  
-  const openDeleteDialog = (user: User) => {
+
+  // Open delete confirmation dialog
+  const handleDeleteDialog = (user: User) => {
     setSelectedUser(user);
-    setIsDeleteUserOpen(true);
+    setDeleteDialogOpen(true);
   };
-  
-  // If not admin, don't render anything (handled by the useEffect redirect)
-  if (!user || user.role !== 'admin') {
-    return null;
-  }
-  
+
+  // Filter users based on search term and role filter
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = 
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesRole = roleFilter.length === 0 || roleFilter.includes(user.role);
+    
+    return matchesSearch && matchesRole;
+  });
+
+  // Get initials for avatar fallback
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
+  // Get role badge color
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-purple-500';
+      case 'teacher':
+        return 'bg-blue-500';
+      case 'student':
+        return 'bg-green-500';
+      case 'superadmin':
+        return 'bg-red-500';
+      default:
+        return 'default';
+    }
+  };
+
   return (
     <DashboardLayout>
-      <div className="animate-fade-in space-y-6">
-        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="space-y-6">
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">User Management</h1>
             <p className="text-muted-foreground mt-1">
-              Manage all users, including students, teachers, and administrators
+              Add, edit, or remove users from the system
             </p>
           </div>
-          <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Add User
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Add New User</DialogTitle>
-                <DialogDescription>
-                  Create a new user account. Fill in all required information.
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleAddUser)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Full Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="John Doe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="user@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="role"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Role</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a role" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="student">Student</SelectItem>
-                            <SelectItem value="teacher">Teacher</SelectItem>
-                            <SelectItem value="admin">Administrator</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {form.watch("role") === "teacher" && (
-                    <FormField
-                      control={form.control}
-                      name="department"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Department</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. Mathematics" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                  
-                  <DialogFooter>
-                    <Button type="submit">Create User</Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-        </header>
-        
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <CardTitle>Users</CardTitle>
-                <CardDescription>
-                  Manage user accounts and permissions
-                </CardDescription>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="search"
-                    placeholder="Search users..."
-                    className="pl-8"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <Select value={roleFilter} onValueChange={setRoleFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Roles</SelectItem>
-                    <SelectItem value="student">Students</SelectItem>
-                    <SelectItem value="teacher">Teachers</SelectItem>
-                    <SelectItem value="admin">Administrators</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Details</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
-                      No users found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center space-x-3">
-                          <Avatar>
-                            <AvatarImage src={user.avatarUrl} alt={user.name} />
-                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{user.name}</div>
-                            <div className="text-xs text-muted-foreground">{user.email}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={
-                          user.role === 'admin' ? "default" : 
-                          user.role === 'teacher' ? "secondary" : 
-                          "outline"
-                        }>
-                          {user.role === 'student' && <School className="h-3 w-3 mr-1" />}
-                          {user.role === 'teacher' && <User className="h-3 w-3 mr-1" />}
-                          {user.role === 'admin' && <Settings className="h-3 w-3 mr-1" />}
-                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {user.role === 'student' && user.scholarLevel && (
-                          <span className="text-sm">
-                            Scholar Level: <Badge variant="outline">
-                              {user.scholarLevel.charAt(0).toUpperCase() + user.scholarLevel.slice(1)}
-                            </Badge>
-                          </span>
-                        )}
-                        {user.role === 'teacher' && user.department && (
-                          <span className="text-sm">
-                            Department: <Badge variant="outline">{user.department}</Badge>
-                          </span>
-                        )}
-                        {user.role === 'admin' && (
-                          <span className="text-sm text-muted-foreground">System Administrator</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => openEditDialog(user)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => openDeleteDialog(user)}
-                            className="text-destructive hover:text-destructive"
-                            disabled={user.id === selectedUser?.id}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-            
-            {/* Edit User Dialog */}
-            <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
-              <DialogContent className="sm:max-w-[425px]">
+          <div className="flex items-center gap-4 mt-4 sm:mt-0">
+            <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add User
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle>Edit User</DialogTitle>
+                  <DialogTitle>Add New User</DialogTitle>
                   <DialogDescription>
-                    Update user information and permissions.
+                    Create a new user account in the system
                   </DialogDescription>
                 </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(handleEditUser)} className="space-y-4">
+                <Form {...addForm}>
+                  <form onSubmit={addForm.handleSubmit(onAddSubmit)} className="space-y-4">
                     <FormField
-                      control={form.control}
+                      control={addForm.control}
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Full Name</FormLabel>
+                          <FormLabel>Name</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input placeholder="Full name" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={addForm.control}
                       name="email"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input placeholder="Email address" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     <FormField
-                      control={form.control}
+                      control={addForm.control}
                       name="role"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Role</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                            value={field.value}
-                          >
-                            <FormControl>
+                          <FormControl>
+                            <Select 
+                              onValueChange={field.onChange} 
+                              defaultValue={field.value}
+                            >
                               <SelectTrigger>
-                                <SelectValue placeholder="Select a role" />
+                                <SelectValue placeholder="Select role" />
                               </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="student">Student</SelectItem>
-                              <SelectItem value="teacher">Teacher</SelectItem>
-                              <SelectItem value="admin">Administrator</SelectItem>
-                            </SelectContent>
-                          </Select>
+                              <SelectContent>
+                                <SelectItem value="student">Student</SelectItem>
+                                <SelectItem value="teacher">Teacher</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                {user?.role === 'superadmin' && (
+                                  <SelectItem value="superadmin">Superadmin</SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     
-                    {form.watch("role") === "teacher" && (
+                    {addForm.watch('role') === 'student' && (
                       <FormField
-                        control={form.control}
+                        control={addForm.control}
+                        name="class"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Class</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Class (e.g. 10A)" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                    
+                    {addForm.watch('role') === 'teacher' && (
+                      <FormField
+                        control={addForm.control}
                         name="department"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Department</FormLabel>
                             <FormControl>
-                              <Input placeholder="e.g. Mathematics" {...field} />
+                              <Input placeholder="Department" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -506,132 +419,303 @@ const UserManagement = () => {
                     )}
                     
                     <DialogFooter>
-                      <Button type="submit">Save Changes</Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setAddDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit">Add User</Button>
                     </DialogFooter>
                   </form>
                 </Form>
               </DialogContent>
             </Dialog>
-            
-            {/* Delete User Dialog */}
-            <Dialog open={isDeleteUserOpen} onOpenChange={setIsDeleteUserOpen}>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Delete User</DialogTitle>
-                  <DialogDescription>
-                    Are you sure you want to delete this user? This action cannot be undone.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="flex items-center p-4 border rounded-md">
-                  <Avatar className="mr-3">
-                    <AvatarImage src={selectedUser?.avatarUrl} alt={selectedUser?.name} />
-                    <AvatarFallback>{selectedUser?.name?.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium">{selectedUser?.name}</div>
-                    <div className="text-sm text-muted-foreground">{selectedUser?.email}</div>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsDeleteUserOpen(false)}>Cancel</Button>
-                  <Button variant="destructive" onClick={handleDeleteUser}>Delete User</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </CardContent>
-        </Card>
+          </div>
+        </header>
         
         <Card>
-          <CardHeader>
-            <CardTitle>User Statistics</CardTitle>
-            <CardDescription>Overview of system users by role</CardDescription>
+          <CardHeader className="pb-4">
+            <CardTitle>User List</CardTitle>
+            <CardDescription>Manage all users in the system</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="flex justify-between items-center p-4 bg-muted/50 rounded-md">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-primary/10 flex items-center justify-center rounded-full">
-                    <School className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium">Students</div>
-                    <div className="text-2xl font-bold">{allUsers.filter(u => u.role === 'student').length}</div>
-                  </div>
-                </div>
+            <div className="mb-6 flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Input 
+                  placeholder="Search users by name or email..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full"
+                />
+                {searchTerm && (
+                  <Button 
+                    variant="ghost" 
+                    className="absolute right-1 top-1 h-8 w-8 p-0" 
+                    onClick={() => setSearchTerm('')}
+                  >
+                    <X className="h-4 w-4" />
+                    <span className="sr-only">Clear search</span>
+                  </Button>
+                )}
               </div>
-              
-              <div className="flex justify-between items-center p-4 bg-muted/50 rounded-md">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-primary/10 flex items-center justify-center rounded-full">
-                    <User className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium">Teachers</div>
-                    <div className="text-2xl font-bold">{allUsers.filter(u => u.role === 'teacher').length}</div>
-                  </div>
-                </div>
+              <div>
+                <Label className="block mb-2 text-sm">Filter by role</Label>
+                <ToggleGroup 
+                  type="multiple" 
+                  value={roleFilter} 
+                  onValueChange={setRoleFilter}
+                  className="justify-start"
+                >
+                  <ToggleGroupItem value="student">Student</ToggleGroupItem>
+                  <ToggleGroupItem value="teacher">Teacher</ToggleGroupItem>
+                  <ToggleGroupItem value="admin">Admin</ToggleGroupItem>
+                  <ToggleGroupItem value="superadmin">Superadmin</ToggleGroupItem>
+                </ToggleGroup>
               </div>
-              
-              <div className="flex justify-between items-center p-4 bg-muted/50 rounded-md">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-primary/10 flex items-center justify-center rounded-full">
-                    <Settings className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium">Administrators</div>
-                    <div className="text-2xl font-bold">{allUsers.filter(u => u.role === 'admin').length}</div>
-                  </div>
-                </div>
-              </div>
+            </div>
+            
+            <ScrollArea className="h-[calc(100vh-400px)]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Details</TableHead>
+                    <TableHead>Date Added</TableHead>
+                    <TableHead className="w-[70px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarImage src={user.avatarUrl} />
+                            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                          </Avatar>
+                          <span>{user.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Badge className={getRoleBadgeVariant(user.role)}>{user.role}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {user.role === 'student' && user.class && (
+                          <div className="text-sm">
+                            Class: {user.class}
+                            {user.scholarLevel && (
+                              <Badge variant="outline" className="ml-2">
+                                {user.scholarLevel === 'junior' && 'Junior Scholar'}
+                                {user.scholarLevel === 'rising' && 'Rising Intellect'}
+                                {user.scholarLevel === 'elite' && 'Mastermind Elite'}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                        {user.role === 'teacher' && user.department && (
+                          <div className="text-sm">Department: {user.department}</div>
+                        )}
+                      </TableCell>
+                      <TableCell>{user.dateAdded}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="h-4 w-4" />
+                              <span className="sr-only">Open menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteDialog(user)}
+                              className="text-destructive"
+                            >
+                              <Trash className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  
+                  {filteredUsers.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        No users found matching your search criteria
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+            
+            <div className="mt-4 text-sm text-muted-foreground">
+              Showing {filteredUsers.length} out of {users.length} users
             </div>
           </CardContent>
         </Card>
       </div>
+      
+      {/* Edit User Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Update user details and role
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Full name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Email address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <FormControl>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="student">Student</SelectItem>
+                          <SelectItem value="teacher">Teacher</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          {user?.role === 'superadmin' && (
+                            <SelectItem value="superadmin">Superadmin</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {editForm.watch('role') === 'student' && (
+                <FormField
+                  control={editForm.control}
+                  name="class"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Class</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Class (e.g. 10A)" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              
+              {editForm.watch('role') === 'teacher' && (
+                <FormField
+                  control={editForm.control}
+                  name="department"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Department</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Department" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setEditDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">Save Changes</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this user? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-3 p-4 rounded-md border my-4">
+            <Avatar>
+              <AvatarImage src={selectedUser?.avatarUrl} />
+              <AvatarFallback>{selectedUser ? getInitials(selectedUser.name) : 'U'}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-medium">{selectedUser?.name}</p>
+              <p className="text-sm text-muted-foreground">{selectedUser?.email}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteUser}
+            >
+              Delete User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
-
-// Get sample users from the Auth context
-const SAMPLE_USERS: User[] = [
-  {
-    id: '1',
-    name: 'John Student',
-    email: 'student@example.com',
-    role: 'student',
-    avatarUrl: 'https://i.pravatar.cc/150?img=1',
-    scholarLevel: 'junior'
-  },
-  {
-    id: '2',
-    name: 'Jane Teacher',
-    email: 'teacher@example.com',
-    role: 'teacher',
-    avatarUrl: 'https://i.pravatar.cc/150?img=5',
-    department: 'Mathematics'
-  },
-  {
-    id: '3',
-    name: 'Admin User',
-    email: 'admin@example.com',
-    role: 'admin',
-    avatarUrl: 'https://i.pravatar.cc/150?img=8'
-  },
-  {
-    id: '4',
-    name: 'Alice Student',
-    email: 'alice@example.com',
-    role: 'student',
-    avatarUrl: 'https://i.pravatar.cc/150?img=9',
-    scholarLevel: 'rising'
-  },
-  {
-    id: '5',
-    name: 'Bob Student',
-    email: 'bob@example.com',
-    role: 'student',
-    avatarUrl: 'https://i.pravatar.cc/150?img=4',
-    scholarLevel: 'elite'
-  }
-];
 
 export default UserManagement;
