@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -129,8 +130,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         ...commonItems,
         {
           icon: Users,
-          label: 'Users',
-          href: '/users'
+          label: 'User Section',
+          href: '/user-management'
         },
         {
           icon: FileText,

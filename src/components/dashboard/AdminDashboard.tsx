@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -179,7 +178,7 @@ const AdminDashboard = () => {
         <TabsList>
           <TabsTrigger value="approvals">Pending Approvals</TabsTrigger>
           <TabsTrigger value="activities">Recent Activities</TabsTrigger>
-          <TabsTrigger value="users">User Management</TabsTrigger>
+          <TabsTrigger value="users">User Section</TabsTrigger>
         </TabsList>
         
         <TabsContent value="approvals" className="mt-6">
@@ -318,9 +317,11 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 gap-4">
-                  <Button variant="outline" className="justify-start h-auto py-3">
-                    <Users className="mr-2 h-4 w-4" />
-                    Manage User Accounts
+                  <Button variant="outline" className="justify-start h-auto py-3" asChild>
+                    <Link to="/user-management">
+                      <Users className="mr-2 h-4 w-4" />
+                      Manage User Accounts
+                    </Link>
                   </Button>
                   
                   <Button variant="outline" className="justify-start h-auto py-3">

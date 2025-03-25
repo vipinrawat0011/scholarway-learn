@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -29,12 +28,23 @@ const userFormSchema = z.object({
   department: z.string().optional(),
 });
 
+// Define a User type to fix TypeScript errors
+type User = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatarUrl: string;
+  scholarLevel?: string;
+  department?: string;
+};
+
 const UserManagement = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   
   // Mock user data (in a real app, this would come from API)
-  const [allUsers, setAllUsers] = useState([
+  const [allUsers, setAllUsers] = useState<User[]>([
     ...SAMPLE_USERS, // This comes from AuthContext
     // Add more mock users for demonstration
     {
@@ -71,7 +81,7 @@ const UserManagement = () => {
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [isDeleteUserOpen, setIsDeleteUserOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   
   // Set up form
   const form = useForm({
@@ -86,10 +96,11 @@ const UserManagement = () => {
   });
   
   // Redirect if not admin
-  if (!user || user.role !== 'admin') {
-    navigate('/dashboard');
-    return null;
-  }
+  React.useEffect(() => {
+    if (!user || user.role !== 'admin') {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
   
   // Filter users based on search and role filter
   const filteredUsers = allUsers.filter(user => {
@@ -108,8 +119,8 @@ const UserManagement = () => {
   });
   
   // Handler for adding a new user
-  const handleAddUser = (data) => {
-    const newUser = {
+  const handleAddUser = (data: z.infer<typeof userFormSchema>) => {
+    const newUser: User = {
       id: `${allUsers.length + 1}`,
       name: data.name,
       email: data.email,
@@ -126,7 +137,9 @@ const UserManagement = () => {
   };
   
   // Handler for updating a user
-  const handleEditUser = (data) => {
+  const handleEditUser = (data: z.infer<typeof userFormSchema>) => {
+    if (!selectedUser) return;
+    
     const updatedUsers = allUsers.map(u => {
       if (u.id === selectedUser.id) {
         return {
@@ -150,6 +163,8 @@ const UserManagement = () => {
   
   // Handler for deleting a user
   const handleDeleteUser = () => {
+    if (!selectedUser || !user) return;
+    
     if (selectedUser.id === user.id) {
       toast.error("You cannot delete your own account");
       setIsDeleteUserOpen(false);
@@ -164,22 +179,27 @@ const UserManagement = () => {
     toast.success(`User deleted successfully`);
   };
   
-  const openEditDialog = (user) => {
+  const openEditDialog = (user: User) => {
     setSelectedUser(user);
     form.reset({
       name: user.name,
       email: user.email,
       role: user.role,
-      class: user.class || "",
+      class: "",
       department: user.department || "",
     });
     setIsEditUserOpen(true);
   };
   
-  const openDeleteDialog = (user) => {
+  const openDeleteDialog = (user: User) => {
     setSelectedUser(user);
     setIsDeleteUserOpen(true);
   };
+  
+  // If not admin, don't render anything (handled by the useEffect redirect)
+  if (!user || user.role !== 'admin') {
+    return null;
+  }
   
   return (
     <DashboardLayout>
@@ -572,7 +592,7 @@ const UserManagement = () => {
 };
 
 // Get sample users from the Auth context
-const SAMPLE_USERS = [
+const SAMPLE_USERS: User[] = [
   {
     id: '1',
     name: 'John Student',
