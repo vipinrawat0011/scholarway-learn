@@ -304,8 +304,9 @@ const AdminDashboard = () => {
                 </div>
                 
                 <div className="flex justify-center gap-4 mt-6">
-                  <Button className="w-full">Add User</Button>
-                  <Button variant="outline" className="w-full">Manage Roles</Button>
+                  <Button className="w-full" asChild>
+                    <Link to="/user-management">Manage Users</Link>
+                  </Button>
                 </div>
               </CardContent>
             </Card>

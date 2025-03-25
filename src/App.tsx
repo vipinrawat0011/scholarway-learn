@@ -17,6 +17,7 @@ import TestExam from "./pages/TestExam";
 import TestResults from "./pages/TestResults";
 import AILearningAssistance from "./pages/AILearningAssistance";
 import StudentClassification from "./pages/StudentClassification";
+import UserManagement from "./pages/UserManagement";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/test-results/:testId" element={<TestResults />} />
             <Route path="/ai-learning" element={<AILearningAssistance />} />
             <Route path="/student-classification" element={<StudentClassification />} />
+            <Route path="/user-management" element={<UserManagement />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
