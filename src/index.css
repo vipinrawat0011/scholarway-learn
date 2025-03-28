@@ -5,44 +5,44 @@
 
 @layer base {
   :root {
-    --background: 42 52% 98%;
-    --foreground: 38 36% 20%;
+    --background: 210 50% 98%;
+    --foreground: 220 25% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 38 36% 20%;
+    --card-foreground: 220 25% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 38 36% 20%;
+    --popover-foreground: 220 25% 12%;
 
-    --primary: 252 75% 52%;
+    --primary: 222 70% 50%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 38 75% 83%;
-    --secondary-foreground: 38 36% 20%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 42 30% 94%;
-    --muted-foreground: 38 25% 47%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 252 75% 52%;
-    --accent-foreground: 38 36% 20%;
+    --accent: 222 70% 50%;
+    --accent-foreground: 222 47% 11%;
 
     --destructive: 0 70% 51%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 38 30% 84%;
-    --input: 38 30% 84%;
-    --ring: 252 75% 52%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 222 84% 50%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 252 75% 52%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 210 40% 98%;
-    --sidebar-primary-foreground: 252 75% 52%;
-    --sidebar-accent: 252 30% 45%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 252 30% 45%;
-    --sidebar-ring: 212 27% 84%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 25% 12%;
+    --sidebar-primary: 222 70% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 222 84% 50%;
 
     --scholar-junior: 195 84% 54%;
     --scholar-rising: 280 84% 54%;
@@ -50,41 +50,41 @@
   }
 
   .dark {
-    --background: 38 36% 13%;
-    --foreground: 42 30% 94%;
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
 
-    --card: 38 36% 13%;
-    --card-foreground: 42 30% 94%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 38 36% 13%;
-    --popover-foreground: 42 30% 94%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 252 75% 52%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222 47% 11%;
 
-    --secondary: 38 36% 30%;
-    --secondary-foreground: 42 30% 94%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 38 36% 25%;
-    --muted-foreground: 38 25% 67%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 38 36% 25%;
-    --accent-foreground: 42 30% 94%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 38 36% 25%;
-    --input: 38 36% 25%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
     --ring: 212 27% 84%;
 
-    --sidebar-background: 252 75% 52%;
+    --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 210 40% 98%;
-    --sidebar-primary-foreground: 252 75% 52%;
-    --sidebar-accent: 252 30% 45%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 217 33% 17%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 252 30% 45%;
+    --sidebar-border: 217 33% 17%;
     --sidebar-ring: 212 27% 84%;
 
     --scholar-junior: 195 70% 50%;
@@ -195,30 +195,4 @@
   opacity: 0;
   transform: translateY(-8px);
   transition: opacity 300ms, transform 300ms;
-}
-
-/* School color scheme classes */
-.color-brown {
-  background-color: #8E6E4C;
-  color: white;
-}
-
-.color-beige {
-  background-color: #ECD8B5;
-  color: #8E6E4C;
-}
-
-.color-cream {
-  background-color: #FBF3E2;
-  color: #8E6E4C;
-}
-
-.color-yellow {
-  background-color: #FFCD61;
-  color: #8E6E4C;
-}
-
-.color-indigo {
-  background-color: #4840BC;
-  color: white;
 }
