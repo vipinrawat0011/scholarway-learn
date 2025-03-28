@@ -9,7 +9,7 @@ import { BarChart, LineChart, PieChart, InstituteStatsCharts } from './Superadmi
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { CheckCircle, XCircle, Shield, Building, User, BookOpen, Plus, FileText, Calendar, Settings, Home } from 'lucide-react';
+import { CheckCircle, XCircle, Shield, Building, User, BookOpen, Plus, FileText, Calendar, Settings, Home, Mail } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
