@@ -166,18 +166,24 @@ const SuperadminDashboard = () => {
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddInstituteForm, setShowAddInstituteForm] = useState(false);
+  const [showAddAdminForm, setShowAddAdminForm] = useState(false);
   const [newInstituteName, setNewInstituteName] = useState('');
   const [newInstituteLocation, setNewInstituteLocation] = useState('');
+  const [newAdminName, setNewAdminName] = useState('');
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [newAdminInstitute, setNewAdminInstitute] = useState('');
   const [dashboardVisibility, setDashboardVisibility] = useState<DashboardVisibility[]>(INITIAL_VISIBILITY);
   const [activeTab, setActiveTab] = useState('institutes');
+  const [institutes, setInstitutes] = useState<Institute[]>(SAMPLE_INSTITUTES);
+  const [admins, setAdmins] = useState<Admin[]>(SAMPLE_ADMINS);
 
   // Filter institutes and admins based on search query
-  const filteredInstitutes = SAMPLE_INSTITUTES.filter(institute => 
+  const filteredInstitutes = institutes.filter(institute => 
     institute.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     institute.location.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredAdmins = SAMPLE_ADMINS.filter(admin => 
+  const filteredAdmins = admins.filter(admin => 
     admin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     admin.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -185,14 +191,14 @@ const SuperadminDashboard = () => {
   // Handle institute selection
   const handleInstituteSelect = (institute: Institute) => {
     setSelectedInstitute(institute);
-    const admin = SAMPLE_ADMINS.find(a => a.instituteId === institute.id) || null;
+    const admin = admins.find(a => a.instituteId === institute.id) || null;
     setSelectedAdmin(admin);
   };
 
   // Handle admin selection
   const handleAdminSelect = (admin: Admin) => {
     setSelectedAdmin(admin);
-    const institute = SAMPLE_INSTITUTES.find(i => i.id === admin.instituteId) || null;
+    const institute = institutes.find(i => i.id === admin.instituteId) || null;
     setSelectedInstitute(institute);
   };
 
@@ -203,11 +209,91 @@ const SuperadminDashboard = () => {
       return;
     }
 
-    // This would typically connect to an API to add the institute
-    toast.success(`Institute "${newInstituteName}" added successfully!`);
+    const newInstitute: Institute = {
+      id: (institutes.length + 1).toString(),
+      name: newInstituteName,
+      location: newInstituteLocation,
+      adminId: '',
+      totalTeachers: 0,
+      totalStudents: 0,
+      totalCourses: 0,
+      createdAt: new Date().toISOString().split('T')[0]
+    };
+
+    setInstitutes([...institutes, newInstitute]);
+    
+    // Add new institute to visibility settings
+    const newVisibility: DashboardVisibility = {
+      instituteId: newInstitute.id,
+      instituteName: newInstitute.name,
+      admin: {
+        userSection: true,
+        contentReview: true,
+        approvals: true,
+        studentClassification: true,
+        aiLearning: true,
+        systemStatus: true
+      },
+      teacher: {
+        materials: true,
+        students: true,
+        exams: true
+      },
+      student: {
+        progress: true,
+        tests: true
+      }
+    };
+    
+    setDashboardVisibility([...dashboardVisibility, newVisibility]);
     setNewInstituteName('');
     setNewInstituteLocation('');
     setShowAddInstituteForm(false);
+    toast.success(`Institute "${newInstituteName}" added successfully!`);
+  };
+
+  // Handle adding a new admin
+  const handleAddAdmin = () => {
+    if (!newAdminName.trim() || !newAdminEmail.trim() || !newAdminInstitute) {
+      toast.error('Please fill out all fields');
+      return;
+    }
+
+    const targetInstitute = institutes.find(i => i.id === newAdminInstitute);
+    if (!targetInstitute) {
+      toast.error('Please select a valid institute');
+      return;
+    }
+
+    // Check if admin already exists for this institute
+    const existingAdmin = admins.find(a => a.instituteId === newAdminInstitute);
+    if (existingAdmin) {
+      toast.error(`Admin already exists for ${targetInstitute.name}`);
+      return;
+    }
+
+    const newAdmin: Admin = {
+      id: (admins.length + 101).toString(),
+      name: newAdminName,
+      email: newAdminEmail,
+      instituteId: newAdminInstitute,
+      avatarUrl: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
+      status: 'active'
+    };
+
+    setAdmins([...admins, newAdmin]);
+    
+    // Update the institute with the new admin ID
+    const updatedInstitutes = institutes.map(inst => 
+      inst.id === newAdminInstitute ? {...inst, adminId: newAdmin.id} : inst
+    );
+    setInstitutes(updatedInstitutes);
+    
+    setNewAdminName('');
+    setNewAdminEmail('');
+    setNewAdminInstitute('');
+    setShowAddAdminForm(false);
+    toast.success(`Admin "${newAdminName}" assigned to ${targetInstitute.name} successfully!`);
   };
 
   // Handle visibility toggle
@@ -228,6 +314,28 @@ const SuperadminDashboard = () => {
     );
     
     toast.success(`Feature visibility updated for ${role}`);
+  };
+
+  // Function to update admin status
+  const toggleAdminStatus = (adminId: string) => {
+    const updatedAdmins = admins.map(admin => {
+      if (admin.id === adminId) {
+        const newStatus = admin.status === 'active' ? 'inactive' : 'active';
+        return {...admin, status: newStatus};
+      }
+      return admin;
+    });
+    
+    setAdmins(updatedAdmins);
+    
+    if (selectedAdmin && selectedAdmin.id === adminId) {
+      const updatedAdmin = updatedAdmins.find(a => a.id === adminId);
+      if (updatedAdmin) {
+        setSelectedAdmin(updatedAdmin);
+      }
+    }
+    
+    toast.success('Admin status updated successfully');
   };
 
   return (
@@ -253,6 +361,9 @@ const SuperadminDashboard = () => {
           <Button onClick={() => setShowAddInstituteForm(true)}>
             <Plus className="mr-1 h-4 w-4" /> Add Institute
           </Button>
+          <Button onClick={() => setShowAddAdminForm(true)} variant="outline">
+            <Plus className="mr-1 h-4 w-4" /> Add Admin
+          </Button>
         </div>
       </div>
 
@@ -260,7 +371,7 @@ const SuperadminDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>Add New Institute</CardTitle>
-            <CardDescription>Create a new institute and assign an admin</CardDescription>
+            <CardDescription>Create a new institute in the system</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4">
@@ -291,6 +402,58 @@ const SuperadminDashboard = () => {
         </Card>
       )}
 
+      {showAddAdminForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Add New Admin</CardTitle>
+            <CardDescription>Assign an admin to an institute</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="adminName">Admin Name</Label>
+                <Input 
+                  id="adminName" 
+                  value={newAdminName}
+                  onChange={(e) => setNewAdminName(e.target.value)}
+                  placeholder="Full name"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="adminEmail">Email</Label>
+                <Input 
+                  id="adminEmail" 
+                  type="email"
+                  value={newAdminEmail}
+                  onChange={(e) => setNewAdminEmail(e.target.value)}
+                  placeholder="email@example.com"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="adminInstitute">Assign to Institute</Label>
+                <select 
+                  id="adminInstitute"
+                  value={newAdminInstitute}
+                  onChange={(e) => setNewAdminInstitute(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <option value="">Select an institute</option>
+                  {institutes.filter(inst => !admins.some(a => a.instituteId === inst.id)).map(institute => (
+                    <option key={institute.id} value={institute.id}>
+                      {institute.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button variant="outline" onClick={() => setShowAddAdminForm(false)}>Cancel</Button>
+            <Button onClick={handleAddAdmin}>Assign Admin</Button>
+          </CardFooter>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-1">
           <CardHeader>
@@ -305,7 +468,7 @@ const SuperadminDashboard = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Institutes</p>
-                  <p className="text-2xl font-bold">{SAMPLE_INSTITUTES.length}</p>
+                  <p className="text-2xl font-bold">{institutes.length}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
@@ -314,7 +477,7 @@ const SuperadminDashboard = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Admins</p>
-                  <p className="text-2xl font-bold">{SAMPLE_ADMINS.length}</p>
+                  <p className="text-2xl font-bold">{admins.length}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
@@ -324,7 +487,7 @@ const SuperadminDashboard = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Total Students</p>
                   <p className="text-2xl font-bold">
-                    {SAMPLE_INSTITUTES.reduce((sum, inst) => sum + inst.totalStudents, 0)}
+                    {institutes.reduce((sum, inst) => sum + inst.totalStudents, 0)}
                   </p>
                 </div>
               </div>
@@ -335,7 +498,7 @@ const SuperadminDashboard = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Total Courses</p>
                   <p className="text-2xl font-bold">
-                    {SAMPLE_INSTITUTES.reduce((sum, inst) => sum + inst.totalCourses, 0)}
+                    {institutes.reduce((sum, inst) => sum + inst.totalCourses, 0)}
                   </p>
                 </div>
               </div>
@@ -389,8 +552,20 @@ const SuperadminDashboard = () => {
                           <p className="font-medium">{new Date(institute.createdAt).toLocaleDateString()}</p>
                         </div>
                       </div>
+                      <div className="mt-2 text-sm">
+                        <p className="text-muted-foreground">Admin</p>
+                        <p className="font-medium">
+                          {admins.find(a => a.instituteId === institute.id)?.name || 'No admin assigned'}
+                        </p>
+                      </div>
                     </div>
                   ))}
+                  
+                  {filteredInstitutes.length === 0 && (
+                    <div className="text-center p-4 text-muted-foreground">
+                      No institutes found matching your search.
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
             </TabsContent>
@@ -415,9 +590,17 @@ const SuperadminDashboard = () => {
                         <div className="flex-1">
                           <div className="flex justify-between">
                             <h3 className="font-medium">{admin.name}</h3>
-                            <Badge variant={admin.status === 'active' ? "success" : "secondary"}>
-                              {admin.status}
-                            </Badge>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className={`${admin.status === 'active' ? 'text-green-500' : 'text-red-500'}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleAdminStatus(admin.id);
+                              }}
+                            >
+                              {admin.status === 'active' ? 'Active' : 'Inactive'}
+                            </Button>
                           </div>
                           <p className="text-sm text-muted-foreground">{admin.email}</p>
                         </div>
@@ -425,11 +608,17 @@ const SuperadminDashboard = () => {
                       <div className="mt-2 text-sm">
                         <p className="text-muted-foreground">Institute</p>
                         <p className="font-medium">
-                          {SAMPLE_INSTITUTES.find(i => i.id === admin.instituteId)?.name || 'Unknown'}
+                          {institutes.find(i => i.id === admin.instituteId)?.name || 'Unknown'}
                         </p>
                       </div>
                     </div>
                   ))}
+                  
+                  {filteredAdmins.length === 0 && (
+                    <div className="text-center p-4 text-muted-foreground">
+                      No admins found matching your search.
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
             </TabsContent>
@@ -531,7 +720,7 @@ const SuperadminDashboard = () => {
                           </div>
                         </div>
                         <Switch
-                          checked={enabled}
+                          checked={!!enabled}
                           onCheckedChange={() => handleVisibilityToggle(selectedInstitute.id, 'admin', key)}
                         />
                       </div>
@@ -558,7 +747,7 @@ const SuperadminDashboard = () => {
                           </div>
                         </div>
                         <Switch
-                          checked={enabled}
+                          checked={!!enabled}
                           onCheckedChange={() => handleVisibilityToggle(selectedInstitute.id, 'teacher', key)}
                         />
                       </div>
@@ -585,7 +774,7 @@ const SuperadminDashboard = () => {
                           </div>
                         </div>
                         <Switch
-                          checked={enabled}
+                          checked={!!enabled}
                           onCheckedChange={() => handleVisibilityToggle(selectedInstitute.id, 'student', key)}
                         />
                       </div>

@@ -30,6 +30,7 @@ interface UserProfile {
   avatarUrl?: string;
   scholarLevel?: ScholarLevel; // For students only
   department?: string; // For teachers only
+  instituteId?: string; // For admins, teachers, and students
 }
 
 interface AuthContextType {
@@ -165,7 +166,8 @@ const SAMPLE_USERS: UserProfile[] = [
     email: 'student@example.com',
     role: 'student',
     avatarUrl: 'https://i.pravatar.cc/150?img=1',
-    scholarLevel: 'junior'
+    scholarLevel: 'junior',
+    instituteId: '1'
   },
   {
     id: '2',
@@ -173,14 +175,16 @@ const SAMPLE_USERS: UserProfile[] = [
     email: 'teacher@example.com',
     role: 'teacher',
     avatarUrl: 'https://i.pravatar.cc/150?img=5',
-    department: 'Mathematics'
+    department: 'Mathematics',
+    instituteId: '1'
   },
   {
     id: '3',
     name: 'Admin User',
     email: 'admin@example.com',
     role: 'admin',
-    avatarUrl: 'https://i.pravatar.cc/150?img=8'
+    avatarUrl: 'https://i.pravatar.cc/150?img=8',
+    instituteId: '1'
   },
   {
     id: '4',
@@ -188,7 +192,8 @@ const SAMPLE_USERS: UserProfile[] = [
     email: 'alice@example.com',
     role: 'student',
     avatarUrl: 'https://i.pravatar.cc/150?img=9',
-    scholarLevel: 'rising'
+    scholarLevel: 'rising',
+    instituteId: '2'
   },
   {
     id: '5',
@@ -196,7 +201,8 @@ const SAMPLE_USERS: UserProfile[] = [
     email: 'bob@example.com',
     role: 'student',
     avatarUrl: 'https://i.pravatar.cc/150?img=4',
-    scholarLevel: 'elite'
+    scholarLevel: 'elite',
+    instituteId: '3'
   },
   {
     id: '6',
