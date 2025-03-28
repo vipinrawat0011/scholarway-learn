@@ -1,354 +1,605 @@
 
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/contexts/AuthContext';
+import { BarChart, LineChart, PieChart } from '@/components/ui/chart';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
-import { 
-  UserCog, 
-  ShieldCheck, 
-  School, 
-  BookOpen, 
-  ClipboardCheck,
-  User,
-  UserPlus,
-  Users,
-  Settings,
-  Shield,
-  BookMarked,
-  GraduationCap,
-  Lock,
-  Database
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Building, User, BookOpen, Users, PieChart as PieChartIcon, Activity, Eye, EyeOff, Plus, Search } from 'lucide-react';
+import { toast } from 'sonner';
 
-// Mock data for charts
-const userRoleData = [
-  { name: 'Students', value: 250, color: '#16a34a' },
-  { name: 'Teachers', value: 45, color: '#2563eb' },
-  { name: 'Admins', value: 10, color: '#7c3aed' },
+// Sample data for institutes and admins
+interface Institute {
+  id: string;
+  name: string;
+  location: string;
+  adminId: string;
+  totalTeachers: number;
+  totalStudents: number;
+  totalCourses: number;
+  createdAt: string;
+}
+
+interface Admin {
+  id: string;
+  name: string;
+  email: string;
+  instituteId: string;
+  avatarUrl?: string;
+  status: 'active' | 'inactive';
+}
+
+// Permission structure for visibility control
+interface DashboardVisibility {
+  instituteId: string;
+  instituteName: string;
+  admin: {
+    userSection: boolean;
+    contentReview: boolean;
+    approvals: boolean;
+    studentClassification: boolean;
+    aiLearning: boolean;
+    systemStatus: boolean;
+  };
+  teacher: {
+    materials: boolean;
+    students: boolean;
+    exams: boolean;
+  };
+  student: {
+    progress: boolean;
+    tests: boolean;
+  };
+}
+
+// Sample data for institutes and admins
+const SAMPLE_INSTITUTES: Institute[] = [
+  {
+    id: '1',
+    name: 'Northern Academy',
+    location: 'New York, USA',
+    adminId: '101',
+    totalTeachers: 45,
+    totalStudents: 850,
+    totalCourses: 32,
+    createdAt: '2022-09-15'
+  },
+  {
+    id: '2',
+    name: 'Southern University',
+    location: 'Texas, USA',
+    adminId: '102',
+    totalTeachers: 68,
+    totalStudents: 1250,
+    totalCourses: 47,
+    createdAt: '2021-08-10'
+  },
+  {
+    id: '3',
+    name: 'Eastern College',
+    location: 'Massachusetts, USA',
+    adminId: '103',
+    totalTeachers: 32,
+    totalStudents: 620,
+    totalCourses: 28,
+    createdAt: '2023-01-05'
+  },
+  {
+    id: '4',
+    name: 'Western Institute',
+    location: 'California, USA',
+    adminId: '104',
+    totalTeachers: 57,
+    totalStudents: 980,
+    totalCourses: 41,
+    createdAt: '2022-05-22'
+  }
 ];
 
-const permissionUsageData = [
-  { name: 'Dashboard', students: 100, teachers: 40, admins: 10 },
-  { name: 'User Mgmt', students: 0, teachers: 15, admins: 10 },
-  { name: 'Courses', students: 220, teachers: 43, admins: 8 },
-  { name: 'Tests', students: 180, teachers: 45, admins: 7 },
-  { name: 'AI Learning', students: 150, teachers: 35, admins: 6 },
+const SAMPLE_ADMINS: Admin[] = [
+  {
+    id: '101',
+    name: 'John Admin',
+    email: 'john@northernacademy.edu',
+    instituteId: '1',
+    avatarUrl: 'https://i.pravatar.cc/150?img=11',
+    status: 'active'
+  },
+  {
+    id: '102',
+    name: 'Sarah Manager',
+    email: 'sarah@southernuniv.edu',
+    instituteId: '2',
+    avatarUrl: 'https://i.pravatar.cc/150?img=20',
+    status: 'active'
+  },
+  {
+    id: '103',
+    name: 'Michael Director',
+    email: 'michael@eastern.edu',
+    instituteId: '3',
+    avatarUrl: 'https://i.pravatar.cc/150?img=30',
+    status: 'inactive'
+  },
+  {
+    id: '104',
+    name: 'Lisa Controller',
+    email: 'lisa@western.edu',
+    instituteId: '4',
+    avatarUrl: 'https://i.pravatar.cc/150?img=40',
+    status: 'active'
+  }
 ];
 
-const systemHealthData = [
-  { name: 'Storage', usage: 68, limit: 100 },
-  { name: 'Memory', usage: 72, limit: 100 },
-  { name: 'CPU', usage: 45, limit: 100 },
-  { name: 'Database', usage: 58, limit: 100 },
-];
-
-const roleManagementData = [
-  { name: 'Student Access Grants', count: 32, trend: 'up' },
-  { name: 'Teacher Access Grants', count: 18, trend: 'up' },
-  { name: 'Admin Access Grants', count: 5, trend: 'down' },
-  { name: 'Permission Changes', count: 47, trend: 'up' },
-  { name: 'Role Reassignments', count: 12, trend: 'stable' },
-];
+// Sample visibility settings
+const INITIAL_VISIBILITY: DashboardVisibility[] = SAMPLE_INSTITUTES.map(institute => ({
+  instituteId: institute.id,
+  instituteName: institute.name,
+  admin: {
+    userSection: true,
+    contentReview: true,
+    approvals: true,
+    studentClassification: true,
+    aiLearning: true,
+    systemStatus: true
+  },
+  teacher: {
+    materials: true,
+    students: true,
+    exams: true
+  },
+  student: {
+    progress: true,
+    tests: true
+  }
+}));
 
 const SuperadminDashboard = () => {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
+  const { user } = useAuth();
+  const [selectedInstitute, setSelectedInstitute] = useState<Institute | null>(null);
+  const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showAddInstituteForm, setShowAddInstituteForm] = useState(false);
+  const [newInstituteName, setNewInstituteName] = useState('');
+  const [newInstituteLocation, setNewInstituteLocation] = useState('');
+  const [dashboardVisibility, setDashboardVisibility] = useState<DashboardVisibility[]>(INITIAL_VISIBILITY);
+  const [activeTab, setActiveTab] = useState('institutes');
 
-  const recentActions = [
-    { action: 'Updated permission for Teacher role', time: '10 minutes ago', user: 'You' },
-    { action: 'Added new administrator account', time: '2 hours ago', user: 'You' },
-    { action: 'Revoked test management access from Teachers', time: '5 hours ago', user: 'You' },
-    { action: 'System backup completed', time: '1 day ago', user: 'System' },
-    { action: 'Added 5 new courses to database', time: '2 days ago', user: 'John Doe (Admin)' },
-  ];
+  // Filter institutes and admins based on search query
+  const filteredInstitutes = SAMPLE_INSTITUTES.filter(institute => 
+    institute.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    institute.location.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const quickAccessSections = [
-    { 
-      title: 'User Management', 
-      icon: <UserCog className="h-8 w-8 text-indigo-500" />, 
-      description: 'Manage all user accounts across the platform',
-      path: '/user-management'
-    },
-    { 
-      title: 'Permission Manager', 
-      icon: <ShieldCheck className="h-8 w-8 text-emerald-500" />, 
-      description: 'Control feature access for all roles',
-      path: '/permission-manager'
-    },
-    { 
-      title: 'Educational Content', 
-      icon: <School className="h-8 w-8 text-blue-500" />, 
-      description: 'Manage courses and learning materials',
-      path: '/courses'
-    },
-    { 
-      title: 'Assessment Center', 
-      icon: <ClipboardCheck className="h-8 w-8 text-amber-500" />, 
-      description: 'Configure tests and evaluation criteria',
-      path: '/tests'
-    },
-    { 
-      title: 'Student Classification', 
-      icon: <BookOpen className="h-8 w-8 text-rose-500" />, 
-      description: 'Manage student categorization and groups',
-      path: '/student-classification'
-    },
-    { 
-      title: 'System Settings', 
-      icon: <Settings className="h-8 w-8 text-purple-500" />, 
-      description: 'Configure global application settings',
-      path: '/system-settings'
-    },
-  ];
+  const filteredAdmins = SAMPLE_ADMINS.filter(admin => 
+    admin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    admin.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Handle institute selection
+  const handleInstituteSelect = (institute: Institute) => {
+    setSelectedInstitute(institute);
+    const admin = SAMPLE_ADMINS.find(a => a.instituteId === institute.id) || null;
+    setSelectedAdmin(admin);
+  };
+
+  // Handle admin selection
+  const handleAdminSelect = (admin: Admin) => {
+    setSelectedAdmin(admin);
+    const institute = SAMPLE_INSTITUTES.find(i => i.id === admin.instituteId) || null;
+    setSelectedInstitute(institute);
+  };
+
+  // Handle adding a new institute
+  const handleAddInstitute = () => {
+    if (!newInstituteName.trim() || !newInstituteLocation.trim()) {
+      toast.error('Please fill out all fields');
+      return;
+    }
+
+    // This would typically connect to an API to add the institute
+    toast.success(`Institute "${newInstituteName}" added successfully!`);
+    setNewInstituteName('');
+    setNewInstituteLocation('');
+    setShowAddInstituteForm(false);
+  };
+
+  // Handle visibility toggle
+  const handleVisibilityToggle = (instituteId: string, role: 'admin' | 'teacher' | 'student', feature: string) => {
+    setDashboardVisibility(prev => 
+      prev.map(item => {
+        if (item.instituteId === instituteId) {
+          return {
+            ...item,
+            [role]: {
+              ...item[role],
+              [feature]: !item[role][feature as keyof typeof item[typeof role]]
+            }
+          };
+        }
+        return item;
+      })
+    );
+    
+    toast.success(`Feature visibility updated for ${role}`);
+  };
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Superadmin Control Panel</h1>
-        <div className="flex items-center space-x-2">
-          <Shield className="h-5 w-5 text-purple-600" />
-          <span className="text-sm font-medium text-purple-600">Superadmin Access</span>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Superadmin Dashboard</h1>
+          <p className="text-muted-foreground">
+            Welcome, {user?.name} - Manage all institutes and admins
+          </p>
+        </div>
+        <div className="flex space-x-2">
+          <div className="relative w-64">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search institutes or admins..."
+              className="pl-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Button onClick={() => setShowAddInstituteForm(true)}>
+            <Plus className="mr-1 h-4 w-4" /> Add Institute
+          </Button>
         </div>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+
+      {showAddInstituteForm && (
         <Card>
-          <CardContent className="p-6 flex items-center space-x-4">
-            <div className="p-3 rounded-full bg-green-100">
-              <User className="h-6 w-6 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Students</p>
-              <h3 className="text-2xl font-bold">250</h3>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6 flex items-center space-x-4">
-            <div className="p-3 rounded-full bg-blue-100">
-              <GraduationCap className="h-6 w-6 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Teachers</p>
-              <h3 className="text-2xl font-bold">45</h3>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6 flex items-center space-x-4">
-            <div className="p-3 rounded-full bg-purple-100">
-              <UserCog className="h-6 w-6 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Admins</p>
-              <h3 className="text-2xl font-bold">10</h3>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6 flex items-center space-x-4">
-            <div className="p-3 rounded-full bg-red-100">
-              <Lock className="h-6 w-6 text-red-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Role Changes</p>
-              <h3 className="text-2xl font-bold">47</h3>
-              <span className="text-xs text-green-600">+12% this week</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
-        <Card className="col-span-5 lg:col-span-2">
           <CardHeader>
-            <CardTitle>User Distribution</CardTitle>
+            <CardTitle>Add New Institute</CardTitle>
+            <CardDescription>Create a new institute and assign an admin</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={userRoleData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={5}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {userRoleData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Institute Name</Label>
+                <Input 
+                  id="name" 
+                  value={newInstituteName}
+                  onChange={(e) => setNewInstituteName(e.target.value)}
+                  placeholder="e.g. Western University"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="location">Location</Label>
+                <Input 
+                  id="location" 
+                  value={newInstituteLocation}
+                  onChange={(e) => setNewInstituteLocation(e.target.value)}
+                  placeholder="e.g. California, USA"
+                />
+              </div>
             </div>
           </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button variant="outline" onClick={() => setShowAddInstituteForm(false)}>Cancel</Button>
+            <Button onClick={handleAddInstitute}>Create Institute</Button>
+          </CardFooter>
         </Card>
-        
-        <Card className="col-span-5 lg:col-span-3">
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="md:col-span-1">
           <CardHeader>
-            <CardTitle>Feature Access Distribution</CardTitle>
+            <CardTitle>Overview</CardTitle>
+            <CardDescription>System-wide statistics</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={permissionUsageData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="students" name="Students" fill="#16a34a" />
-                  <Bar dataKey="teachers" name="Teachers" fill="#2563eb" />
-                  <Bar dataKey="admins" name="Admins" fill="#7c3aed" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <Tabs defaultValue="quickAccess" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="quickAccess">Quick Access</TabsTrigger>
-          <TabsTrigger value="roleManagement">Role Management</TabsTrigger>
-          <TabsTrigger value="recentActivity">Recent Activity</TabsTrigger>
-          <TabsTrigger value="systemHealth">System Health</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="quickAccess">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {quickAccessSections.map((section, index) => (
-              <Card key={index} className="hover:bg-muted/50 cursor-pointer transition-colors" onClick={() => navigate(section.path)}>
-                <CardContent className="p-6">
-                  <div className="flex items-start space-x-4">
-                    <div>{section.icon}</div>
-                    <div className="space-y-1">
-                      <h3 className="font-bold">{section.title}</h3>
-                      <p className="text-sm text-muted-foreground">{section.description}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="roleManagement">
-          <Card>
-            <CardContent className="p-6">
-              <div className="space-y-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold">Role Management Activity</h3>
-                  <Badge variant="outline" className="bg-purple-100 text-purple-800 hover:bg-purple-200">
-                    Superadmin Only
-                  </Badge>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <div className="bg-primary/10 p-2 rounded-full">
+                  <Building className="h-6 w-6 text-primary" />
                 </div>
-                {roleManagementData.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center pb-4 border-b last:border-0 last:pb-0">
-                    <div>
-                      <p className="font-medium">{item.name}</p>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <Badge variant={
-                          item.trend === 'up' ? 'default' : 
-                          item.trend === 'down' ? 'destructive' : 'outline'
-                        }>
-                          {item.count}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                          {item.trend === 'up' && '↑ Increasing'}
-                          {item.trend === 'down' && '↓ Decreasing'}
-                          {item.trend === 'stable' && '→ Stable'}
-                        </span>
-                      </div>
-                    </div>
-                    <button 
-                      className="px-3 py-1 rounded-md bg-primary/10 text-primary text-sm hover:bg-primary/20"
-                      onClick={() => navigate('/permission-manager')}
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Institutes</p>
+                  <p className="text-2xl font-bold">{SAMPLE_INSTITUTES.length}</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="bg-primary/10 p-2 rounded-full">
+                  <User className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Admins</p>
+                  <p className="text-2xl font-bold">{SAMPLE_ADMINS.length}</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="bg-primary/10 p-2 rounded-full">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Students</p>
+                  <p className="text-2xl font-bold">
+                    {SAMPLE_INSTITUTES.reduce((sum, inst) => sum + inst.totalStudents, 0)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="bg-primary/10 p-2 rounded-full">
+                  <BookOpen className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Courses</p>
+                  <p className="text-2xl font-bold">
+                    {SAMPLE_INSTITUTES.reduce((sum, inst) => sum + inst.totalCourses, 0)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardHeader className="pb-2">
+            <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="institutes">Institutes</TabsTrigger>
+                <TabsTrigger value="admins">Admins</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </CardHeader>
+          <CardContent className="p-0">
+            <TabsContent value="institutes" className="m-0">
+              <ScrollArea className="h-[400px] p-4">
+                <div className="space-y-4">
+                  {filteredInstitutes.map(institute => (
+                    <div 
+                      key={institute.id} 
+                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                        selectedInstitute?.id === institute.id 
+                          ? 'bg-muted border-primary' 
+                          : 'hover:bg-muted/50'
+                      }`}
+                      onClick={() => handleInstituteSelect(institute)}
                     >
-                      Manage
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="recentActivity">
-          <Card>
-            <CardContent className="p-6">
-              <div className="space-y-6">
-                {recentActions.map((action, index) => (
-                  <div key={index} className="flex justify-between items-start pb-4 border-b last:border-0 last:pb-0">
-                    <div>
-                      <p className="font-medium">{action.action}</p>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <Badge variant="outline">{action.user}</Badge>
-                        <span className="text-sm text-muted-foreground">{action.time}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="systemHealth">
-          <Card>
-            <CardContent className="p-6">
-              <div className="space-y-6">
-                {systemHealthData.map((item, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-medium">{item.name}</h4>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={item.usage > 80 ? "destructive" : item.usage > 60 ? "outline" : "secondary"}>
-                          {item.usage}%
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-medium">{institute.name}</h3>
+                          <p className="text-sm text-muted-foreground">{institute.location}</p>
+                        </div>
+                        <Badge variant={institute.id === selectedInstitute?.id ? "default" : "outline"}>
+                          {institute.totalStudents} Students
                         </Badge>
-                        <span className="text-sm text-muted-foreground">{item.usage}/{item.limit}</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 mt-2 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Teachers</p>
+                          <p className="font-medium">{institute.totalTeachers}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Courses</p>
+                          <p className="font-medium">{institute.totalCourses}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Created</p>
+                          <p className="font-medium">{new Date(institute.createdAt).toLocaleDateString()}</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="w-full bg-muted rounded-full h-2.5">
-                      <div 
-                        className={`h-2.5 rounded-full ${
-                          item.usage > 80 ? 'bg-destructive' : item.usage > 60 ? 'bg-amber-500' : 'bg-green-500'
-                        }`}
-                        style={{ width: `${item.usage}%` }}
-                      ></div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+            <TabsContent value="admins" className="m-0">
+              <ScrollArea className="h-[400px] p-4">
+                <div className="space-y-4">
+                  {filteredAdmins.map(admin => (
+                    <div 
+                      key={admin.id} 
+                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                        selectedAdmin?.id === admin.id 
+                          ? 'bg-muted border-primary' 
+                          : 'hover:bg-muted/50'
+                      }`}
+                      onClick={() => handleAdminSelect(admin)}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Avatar>
+                          <AvatarImage src={admin.avatarUrl} />
+                          <AvatarFallback>{admin.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="flex justify-between">
+                            <h3 className="font-medium">{admin.name}</h3>
+                            <Badge variant={admin.status === 'active' ? "success" : "secondary"}>
+                              {admin.status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{admin.email}</p>
+                        </div>
+                      </div>
+                      <div className="mt-2 text-sm">
+                        <p className="text-muted-foreground">Institute</p>
+                        <p className="font-medium">
+                          {SAMPLE_INSTITUTES.find(i => i.id === admin.instituteId)?.name || 'Unknown'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+          </CardContent>
+        </Card>
+      </div>
+
+      {selectedInstitute && (
+        <div className="space-y-6">
+          <h2 className="text-xl font-semibold">
+            {selectedInstitute.name} Details
+            {selectedAdmin && selectedAdmin.status === 'inactive' && (
+              <Badge variant="outline" className="ml-2 bg-yellow-50 text-yellow-700 border-yellow-200">
+                Admin Inactive
+              </Badge>
+            )}
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Institute Statistics</CardTitle>
+                <CardDescription>
+                  Performance metrics for {selectedInstitute.name}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-8">
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="text-sm font-medium">Students Growth</h4>
+                      <Badge variant="outline">{selectedInstitute.totalStudents} total</Badge>
+                    </div>
+                    <div className="h-[120px]">
+                      <BarChart 
+                        data={[
+                          { name: 'Jan', value: Math.floor(selectedInstitute.totalStudents * 0.7) },
+                          { name: 'Feb', value: Math.floor(selectedInstitute.totalStudents * 0.75) },
+                          { name: 'Mar', value: Math.floor(selectedInstitute.totalStudents * 0.8) },
+                          { name: 'Apr', value: Math.floor(selectedInstitute.totalStudents * 0.85) },
+                          { name: 'May', value: Math.floor(selectedInstitute.totalStudents * 0.9) },
+                          { name: 'Jun', value: selectedInstitute.totalStudents }
+                        ]}
+                        yAxisWidth={40}
+                      />
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                  
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="text-sm font-medium">Resource Distribution</h4>
+                    </div>
+                    <div className="h-[120px]">
+                      <PieChart 
+                        data={[
+                          { name: 'Teachers', value: selectedInstitute.totalTeachers, color: 'hsl(var(--primary))' },
+                          { name: 'Courses', value: selectedInstitute.totalCourses, color: 'hsl(var(--muted))' },
+                          { name: 'Students', value: Math.min(selectedInstitute.totalStudents / 20, 100), color: 'hsl(var(--secondary))' }
+                        ]}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Dashboard Visibility Controls</CardTitle>
+                <CardDescription>
+                  Control which features are visible to users at {selectedInstitute.name}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Tabs defaultValue="admin">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="admin">Admin</TabsTrigger>
+                    <TabsTrigger value="teacher">Teacher</TabsTrigger>
+                    <TabsTrigger value="student">Student</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="admin" className="space-y-4 p-4">
+                    {Object.entries(dashboardVisibility.find(v => v.instituteId === selectedInstitute.id)?.admin || {}).map(([key, enabled]) => (
+                      <div key={key} className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <div className="font-medium capitalize">
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {enabled ? (
+                              <span className="flex items-center text-green-600">
+                                <Eye className="mr-1 h-3 w-3" /> Visible
+                              </span>
+                            ) : (
+                              <span className="flex items-center text-red-600">
+                                <EyeOff className="mr-1 h-3 w-3" /> Hidden
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <Switch
+                          checked={enabled}
+                          onCheckedChange={() => handleVisibilityToggle(selectedInstitute.id, 'admin', key)}
+                        />
+                      </div>
+                    ))}
+                  </TabsContent>
+                  
+                  <TabsContent value="teacher" className="space-y-4 p-4">
+                    {Object.entries(dashboardVisibility.find(v => v.instituteId === selectedInstitute.id)?.teacher || {}).map(([key, enabled]) => (
+                      <div key={key} className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <div className="font-medium capitalize">
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {enabled ? (
+                              <span className="flex items-center text-green-600">
+                                <Eye className="mr-1 h-3 w-3" /> Visible
+                              </span>
+                            ) : (
+                              <span className="flex items-center text-red-600">
+                                <EyeOff className="mr-1 h-3 w-3" /> Hidden
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <Switch
+                          checked={enabled}
+                          onCheckedChange={() => handleVisibilityToggle(selectedInstitute.id, 'teacher', key)}
+                        />
+                      </div>
+                    ))}
+                  </TabsContent>
+                  
+                  <TabsContent value="student" className="space-y-4 p-4">
+                    {Object.entries(dashboardVisibility.find(v => v.instituteId === selectedInstitute.id)?.student || {}).map(([key, enabled]) => (
+                      <div key={key} className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <div className="font-medium capitalize">
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {enabled ? (
+                              <span className="flex items-center text-green-600">
+                                <Eye className="mr-1 h-3 w-3" /> Visible
+                              </span>
+                            ) : (
+                              <span className="flex items-center text-red-600">
+                                <EyeOff className="mr-1 h-3 w-3" /> Hidden
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <Switch
+                          checked={enabled}
+                          onCheckedChange={() => handleVisibilityToggle(selectedInstitute.id, 'student', key)}
+                        />
+                      </div>
+                    ))}
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+              <CardFooter className="border-t py-3">
+                <Button variant="outline" className="w-full">Save Visibility Settings</Button>
+              </CardFooter>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
