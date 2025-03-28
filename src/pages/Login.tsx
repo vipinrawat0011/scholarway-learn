@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Mail, Lock, Shield, Building } from 'lucide-react';
+import { Mail, Lock, Shield } from 'lucide-react';
 
 const Login = () => {
   const { login, isLoading } = useAuth();
@@ -121,11 +121,6 @@ const Login = () => {
                   {account.role === 'Superadmin' ? (
                     <span className="flex items-center">
                       <Shield className="mr-1 h-3 w-3" />
-                      {account.role}
-                    </span>
-                  ) : account.role === 'Admin' ? (
-                    <span className="flex items-center">
-                      <Building className="mr-1 h-3 w-3" />
                       {account.role}
                     </span>
                   ) : (
