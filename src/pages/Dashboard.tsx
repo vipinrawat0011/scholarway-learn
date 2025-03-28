@@ -17,7 +17,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center">
-          <div className="h-12 w-12 bg-school-indigo/20 rounded-full mb-4"></div>
+          <div className="h-12 w-12 bg-primary/20 rounded-full mb-4"></div>
           <div className="h-4 w-32 bg-muted rounded mb-3"></div>
           <div className="h-3 w-24 bg-muted rounded"></div>
         </div>
@@ -58,7 +58,7 @@ const Dashboard = () => {
           </p>
           <button 
             onClick={() => window.location.href = '/login'} 
-            className="px-4 py-2 rounded bg-school-indigo text-white"
+            className="px-4 py-2 rounded bg-primary text-white"
           >
             Return to Login
           </button>
