@@ -67,6 +67,13 @@ export default {
 					junior: 'hsl(var(--scholar-junior))',
 					rising: 'hsl(var(--scholar-rising))',
 					elite: 'hsl(var(--scholar-elite))',
+				},
+				school: {
+					brown: '#8E6E4C',
+					beige: '#ECD8B5',
+					cream: '#FBF3E2',
+					yellow: '#FFCD61',
+					indigo: '#4840BC'
 				}
 			},
 			borderRadius: {
