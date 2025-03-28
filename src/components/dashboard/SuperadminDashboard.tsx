@@ -2,793 +2,866 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/contexts/AuthContext';
-import { BarChart, LineChart, PieChart } from '@/components/ui/chart';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { BarChart, LineChart, PieChart, InstituteStatsCharts } from './SuperadminCharts';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Building, User, BookOpen, Users, PieChart as PieChartIcon, Activity, Eye, EyeOff, Plus, Search } from 'lucide-react';
+import { CheckCircle, XCircle, Shield, Building, User, BookOpen, Plus, FileText, Calendar, Settings, Home, Mail } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 
-// Sample data for institutes and admins
+// Demo data
+const demoInstitutes = [
+  {
+    id: '1',
+    name: 'Harvard Academy',
+    location: 'Cambridge, MA',
+    admin: {
+      id: 'admin1',
+      name: 'John Davis',
+      email: 'john@harvard-academy.edu',
+      phone: '+1 (555) 123-4567'
+    },
+    stats: {
+      teachers: 48,
+      students: 650,
+      courses: 35,
+      monthlyData: [
+        { month: 'Jan', studentCount: 600, courseCount: 30 },
+        { month: 'Feb', studentCount: 610, courseCount: 31 },
+        { month: 'Mar', studentCount: 620, courseCount: 32 },
+        { month: 'Apr', studentCount: 630, courseCount: 33 },
+        { month: 'May', studentCount: 640, courseCount: 34 },
+        { month: 'Jun', studentCount: 650, courseCount: 35 }
+      ]
+    },
+    dashboardVisibility: {
+      admin: {
+        'admin-dashboard': true,
+        'admin-courses': true,
+        'admin-schedule': true,
+        'admin-user-section': true,
+        'admin-content-review': true,
+        'admin-approvals': true
+      },
+      teacher: {
+        'teacher-dashboard': true,
+        'teacher-courses': true,
+        'teacher-schedule': true,
+        'teacher-materials': true,
+        'teacher-students': true,
+        'teacher-exams': false
+      },
+      student: {
+        'student-dashboard': true,
+        'student-courses': true,
+        'student-schedule': true,
+        'student-progress': true,
+        'student-tests': false
+      }
+    }
+  },
+  {
+    id: '2',
+    name: 'Oxford Institute',
+    location: 'London, UK',
+    admin: {
+      id: 'admin2',
+      name: 'Emma Thompson',
+      email: 'emma@oxford-institute.edu',
+      phone: '+44 7700 900123'
+    },
+    stats: {
+      teachers: 62,
+      students: 820,
+      courses: 45,
+      monthlyData: [
+        { month: 'Jan', studentCount: 780, courseCount: 40 },
+        { month: 'Feb', studentCount: 790, courseCount: 41 },
+        { month: 'Mar', studentCount: 800, courseCount: 42 },
+        { month: 'Apr', studentCount: 805, courseCount: 43 },
+        { month: 'May', studentCount: 815, courseCount: 44 },
+        { month: 'Jun', studentCount: 820, courseCount: 45 }
+      ]
+    },
+    dashboardVisibility: {
+      admin: {
+        'admin-dashboard': true,
+        'admin-courses': true,
+        'admin-schedule': true,
+        'admin-user-section': true,
+        'admin-content-review': false,
+        'admin-approvals': true
+      },
+      teacher: {
+        'teacher-dashboard': true,
+        'teacher-courses': true,
+        'teacher-schedule': true,
+        'teacher-materials': true,
+        'teacher-students': true,
+        'teacher-exams': true
+      },
+      student: {
+        'student-dashboard': true,
+        'student-courses': true,
+        'student-schedule': true,
+        'student-progress': true,
+        'student-tests': true
+      }
+    }
+  },
+  {
+    id: '3',
+    name: 'Tokyo Tech Academy',
+    location: 'Tokyo, Japan',
+    admin: {
+      id: 'admin3',
+      name: 'Hiroshi Tanaka',
+      email: 'hiroshi@tokyotech.edu',
+      phone: '+81 3-1234-5678'
+    },
+    stats: {
+      teachers: 35,
+      students: 490,
+      courses: 28,
+      monthlyData: [
+        { month: 'Jan', studentCount: 450, courseCount: 25 },
+        { month: 'Feb', studentCount: 460, courseCount: 25 },
+        { month: 'Mar', studentCount: 470, courseCount: 26 },
+        { month: 'Apr', studentCount: 475, courseCount: 26 },
+        { month: 'May', studentCount: 485, courseCount: 27 },
+        { month: 'Jun', studentCount: 490, courseCount: 28 }
+      ]
+    },
+    dashboardVisibility: {
+      admin: {
+        'admin-dashboard': true,
+        'admin-courses': true,
+        'admin-schedule': true,
+        'admin-user-section': true,
+        'admin-content-review': true,
+        'admin-approvals': true
+      },
+      teacher: {
+        'teacher-dashboard': true,
+        'teacher-courses': true,
+        'teacher-schedule': true,
+        'teacher-materials': true,
+        'teacher-students': false,
+        'teacher-exams': false
+      },
+      student: {
+        'student-dashboard': true,
+        'student-courses': true,
+        'student-schedule': true,
+        'student-progress': false,
+        'student-tests': false
+      }
+    }
+  }
+];
+
+// Type definitions
 interface Institute {
   id: string;
   name: string;
   location: string;
-  adminId: string;
-  totalTeachers: number;
-  totalStudents: number;
-  totalCourses: number;
-  createdAt: string;
+  admin: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+  };
+  stats: {
+    teachers: number;
+    students: number;
+    courses: number;
+    monthlyData: Array<{
+      month: string;
+      studentCount: number;
+      courseCount: number;
+    }>;
+  };
+  dashboardVisibility: {
+    admin: Record<string, boolean>;
+    teacher: Record<string, boolean>;
+    student: Record<string, boolean>;
+  };
 }
 
-interface Admin {
+// Dashboard module definitions
+interface DashboardModule {
   id: string;
   name: string;
-  email: string;
-  instituteId: string;
-  avatarUrl?: string;
-  status: 'active' | 'inactive';
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
-// Permission structure for visibility control
-interface DashboardVisibility {
-  instituteId: string;
-  instituteName: string;
+const dashboardModules: Record<string, Record<string, DashboardModule>> = {
   admin: {
-    userSection: boolean;
-    contentReview: boolean;
-    approvals: boolean;
-    studentClassification: boolean;
-    aiLearning: boolean;
-    systemStatus: boolean;
-  };
-  teacher: {
-    materials: boolean;
-    students: boolean;
-    exams: boolean;
-  };
-  student: {
-    progress: boolean;
-    tests: boolean;
-  };
-}
-
-// Sample data for institutes and admins
-const SAMPLE_INSTITUTES: Institute[] = [
-  {
-    id: '1',
-    name: 'Northern Academy',
-    location: 'New York, USA',
-    adminId: '101',
-    totalTeachers: 45,
-    totalStudents: 850,
-    totalCourses: 32,
-    createdAt: '2022-09-15'
-  },
-  {
-    id: '2',
-    name: 'Southern University',
-    location: 'Texas, USA',
-    adminId: '102',
-    totalTeachers: 68,
-    totalStudents: 1250,
-    totalCourses: 47,
-    createdAt: '2021-08-10'
-  },
-  {
-    id: '3',
-    name: 'Eastern College',
-    location: 'Massachusetts, USA',
-    adminId: '103',
-    totalTeachers: 32,
-    totalStudents: 620,
-    totalCourses: 28,
-    createdAt: '2023-01-05'
-  },
-  {
-    id: '4',
-    name: 'Western Institute',
-    location: 'California, USA',
-    adminId: '104',
-    totalTeachers: 57,
-    totalStudents: 980,
-    totalCourses: 41,
-    createdAt: '2022-05-22'
-  }
-];
-
-const SAMPLE_ADMINS: Admin[] = [
-  {
-    id: '101',
-    name: 'John Admin',
-    email: 'john@northernacademy.edu',
-    instituteId: '1',
-    avatarUrl: 'https://i.pravatar.cc/150?img=11',
-    status: 'active'
-  },
-  {
-    id: '102',
-    name: 'Sarah Manager',
-    email: 'sarah@southernuniv.edu',
-    instituteId: '2',
-    avatarUrl: 'https://i.pravatar.cc/150?img=20',
-    status: 'active'
-  },
-  {
-    id: '103',
-    name: 'Michael Director',
-    email: 'michael@eastern.edu',
-    instituteId: '3',
-    avatarUrl: 'https://i.pravatar.cc/150?img=30',
-    status: 'inactive'
-  },
-  {
-    id: '104',
-    name: 'Lisa Controller',
-    email: 'lisa@western.edu',
-    instituteId: '4',
-    avatarUrl: 'https://i.pravatar.cc/150?img=40',
-    status: 'active'
-  }
-];
-
-// Sample visibility settings
-const INITIAL_VISIBILITY: DashboardVisibility[] = SAMPLE_INSTITUTES.map(institute => ({
-  instituteId: institute.id,
-  instituteName: institute.name,
-  admin: {
-    userSection: true,
-    contentReview: true,
-    approvals: true,
-    studentClassification: true,
-    aiLearning: true,
-    systemStatus: true
+    'admin-dashboard': {
+      id: 'admin-dashboard',
+      name: 'Dashboard',
+      description: 'Main admin dashboard with overview statistics',
+      icon: Home
+    },
+    'admin-courses': {
+      id: 'admin-courses',
+      name: 'Courses',
+      description: 'Manage and organize courses',
+      icon: BookOpen
+    },
+    'admin-schedule': {
+      id: 'admin-schedule',
+      name: 'Schedule',
+      description: 'View and manage schedules',
+      icon: Calendar
+    },
+    'admin-user-section': {
+      id: 'admin-user-section',
+      name: 'User Management',
+      description: 'Manage students and teachers',
+      icon: User
+    },
+    'admin-content-review': {
+      id: 'admin-content-review',
+      name: 'Content Review',
+      description: 'Review and approve content',
+      icon: FileText
+    },
+    'admin-approvals': {
+      id: 'admin-approvals',
+      name: 'Approvals',
+      description: 'Approve requests and changes',
+      icon: CheckCircle
+    }
   },
   teacher: {
-    materials: true,
-    students: true,
-    exams: true
+    'teacher-dashboard': {
+      id: 'teacher-dashboard',
+      name: 'Dashboard',
+      description: 'Main teacher dashboard',
+      icon: Home
+    },
+    'teacher-courses': {
+      id: 'teacher-courses',
+      name: 'Courses',
+      description: 'Manage assigned courses',
+      icon: BookOpen
+    },
+    'teacher-schedule': {
+      id: 'teacher-schedule',
+      name: 'Schedule',
+      description: 'View teaching schedule',
+      icon: Calendar
+    },
+    'teacher-materials': {
+      id: 'teacher-materials',
+      name: 'Materials',
+      description: 'Manage study materials',
+      icon: FileText
+    },
+    'teacher-students': {
+      id: 'teacher-students',
+      name: 'Students',
+      description: 'View and manage students',
+      icon: User
+    },
+    'teacher-exams': {
+      id: 'teacher-exams',
+      name: 'Exams',
+      description: 'Create and manage exams',
+      icon: FileText
+    }
   },
   student: {
-    progress: true,
-    tests: true
+    'student-dashboard': {
+      id: 'student-dashboard',
+      name: 'Dashboard',
+      description: 'Main student dashboard',
+      icon: Home
+    },
+    'student-courses': {
+      id: 'student-courses',
+      name: 'Courses',
+      description: 'View enrolled courses',
+      icon: BookOpen
+    },
+    'student-schedule': {
+      id: 'student-schedule',
+      name: 'Schedule',
+      description: 'View class schedule',
+      icon: Calendar
+    },
+    'student-progress': {
+      id: 'student-progress',
+      name: 'Progress',
+      description: 'Track learning progress',
+      icon: CheckCircle
+    },
+    'student-tests': {
+      id: 'student-tests',
+      name: 'Tests',
+      description: 'Take and view tests',
+      icon: FileText
+    }
   }
-}));
+};
 
 const SuperadminDashboard = () => {
-  const { user } = useAuth();
+  const [institutes, setInstitutes] = useState<Institute[]>(demoInstitutes);
   const [selectedInstitute, setSelectedInstitute] = useState<Institute | null>(null);
-  const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showAddInstituteForm, setShowAddInstituteForm] = useState(false);
-  const [showAddAdminForm, setShowAddAdminForm] = useState(false);
-  const [newInstituteName, setNewInstituteName] = useState('');
-  const [newInstituteLocation, setNewInstituteLocation] = useState('');
-  const [newAdminName, setNewAdminName] = useState('');
-  const [newAdminEmail, setNewAdminEmail] = useState('');
-  const [newAdminInstitute, setNewAdminInstitute] = useState('');
-  const [dashboardVisibility, setDashboardVisibility] = useState<DashboardVisibility[]>(INITIAL_VISIBILITY);
-  const [activeTab, setActiveTab] = useState('institutes');
-  const [institutes, setInstitutes] = useState<Institute[]>(SAMPLE_INSTITUTES);
-  const [admins, setAdmins] = useState<Admin[]>(SAMPLE_ADMINS);
-
-  // Filter institutes and admins based on search query
+  const [activeTab, setActiveTab] = useState<string>('institutes');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  
+  // New institute form state
+  const [newInstitute, setNewInstitute] = useState({
+    name: '',
+    location: '',
+    adminName: '',
+    adminEmail: '',
+    adminPhone: ''
+  });
+  
+  // Filter institutes based on search query
   const filteredInstitutes = institutes.filter(institute => 
     institute.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    institute.location.toLowerCase().includes(searchQuery.toLowerCase())
+    institute.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    institute.admin.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const filteredAdmins = admins.filter(admin => 
-    admin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    admin.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // Handle institute selection
-  const handleInstituteSelect = (institute: Institute) => {
+  
+  // Select an institute and switch to details tab
+  const handleSelectInstitute = (institute: Institute) => {
     setSelectedInstitute(institute);
-    const admin = admins.find(a => a.instituteId === institute.id) || null;
-    setSelectedAdmin(admin);
+    setActiveTab('institute-details');
   };
-
-  // Handle admin selection
-  const handleAdminSelect = (admin: Admin) => {
-    setSelectedAdmin(admin);
-    const institute = institutes.find(i => i.id === admin.instituteId) || null;
-    setSelectedInstitute(institute);
-  };
-
-  // Handle adding a new institute
-  const handleAddInstitute = () => {
-    if (!newInstituteName.trim() || !newInstituteLocation.trim()) {
-      toast.error('Please fill out all fields');
-      return;
-    }
-
-    const newInstitute: Institute = {
-      id: (institutes.length + 1).toString(),
-      name: newInstituteName,
-      location: newInstituteLocation,
-      adminId: '',
-      totalTeachers: 0,
-      totalStudents: 0,
-      totalCourses: 0,
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-
-    setInstitutes([...institutes, newInstitute]);
+  
+  // Handle dashboard visibility toggle
+  const handleVisibilityToggle = (role: 'admin' | 'teacher' | 'student', moduleId: string, value: boolean) => {
+    if (!selectedInstitute) return;
     
-    // Add new institute to visibility settings
-    const newVisibility: DashboardVisibility = {
-      instituteId: newInstitute.id,
-      instituteName: newInstitute.name,
-      admin: {
-        userSection: true,
-        contentReview: true,
-        approvals: true,
-        studentClassification: true,
-        aiLearning: true,
-        systemStatus: true
-      },
-      teacher: {
-        materials: true,
-        students: true,
-        exams: true
-      },
-      student: {
-        progress: true,
-        tests: true
-      }
-    };
-    
-    setDashboardVisibility([...dashboardVisibility, newVisibility]);
-    setNewInstituteName('');
-    setNewInstituteLocation('');
-    setShowAddInstituteForm(false);
-    toast.success(`Institute "${newInstituteName}" added successfully!`);
-  };
-
-  // Handle adding a new admin
-  const handleAddAdmin = () => {
-    if (!newAdminName.trim() || !newAdminEmail.trim() || !newAdminInstitute) {
-      toast.error('Please fill out all fields');
-      return;
-    }
-
-    const targetInstitute = institutes.find(i => i.id === newAdminInstitute);
-    if (!targetInstitute) {
-      toast.error('Please select a valid institute');
-      return;
-    }
-
-    // Check if admin already exists for this institute
-    const existingAdmin = admins.find(a => a.instituteId === newAdminInstitute);
-    if (existingAdmin) {
-      toast.error(`Admin already exists for ${targetInstitute.name}`);
-      return;
-    }
-
-    const newAdmin: Admin = {
-      id: (admins.length + 101).toString(),
-      name: newAdminName,
-      email: newAdminEmail,
-      instituteId: newAdminInstitute,
-      avatarUrl: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`,
-      status: 'active'
-    };
-
-    setAdmins([...admins, newAdmin]);
-    
-    // Update the institute with the new admin ID
-    const updatedInstitutes = institutes.map(inst => 
-      inst.id === newAdminInstitute ? {...inst, adminId: newAdmin.id} : inst
-    );
-    setInstitutes(updatedInstitutes);
-    
-    setNewAdminName('');
-    setNewAdminEmail('');
-    setNewAdminInstitute('');
-    setShowAddAdminForm(false);
-    toast.success(`Admin "${newAdminName}" assigned to ${targetInstitute.name} successfully!`);
-  };
-
-  // Handle visibility toggle
-  const handleVisibilityToggle = (instituteId: string, role: 'admin' | 'teacher' | 'student', feature: string) => {
-    setDashboardVisibility(prev => 
-      prev.map(item => {
-        if (item.instituteId === instituteId) {
-          return {
-            ...item,
-            [role]: {
-              ...item[role],
-              [feature]: !item[role][feature as keyof typeof item[typeof role]]
-            }
-          };
+    const updatedInstitute = {
+      ...selectedInstitute,
+      dashboardVisibility: {
+        ...selectedInstitute.dashboardVisibility,
+        [role]: {
+          ...selectedInstitute.dashboardVisibility[role],
+          [moduleId]: value
         }
-        return item;
-      })
+      }
+    };
+    
+    setSelectedInstitute(updatedInstitute);
+    
+    // Update the institute in the institutes array
+    const updatedInstitutes = institutes.map(inst => 
+      inst.id === updatedInstitute.id ? updatedInstitute : inst
     );
     
-    toast.success(`Feature visibility updated for ${role}`);
+    setInstitutes(updatedInstitutes);
+    toast.success(`${moduleId} visibility updated`);
   };
-
-  // Function to update admin status
-  const toggleAdminStatus = (adminId: string) => {
-    const updatedAdmins = admins.map(admin => {
-      if (admin.id === adminId) {
-        const newStatus = admin.status === 'active' ? 'inactive' : 'active';
-        return {...admin, status: newStatus};
+  
+  // Handle new institute form submission
+  const handleAddInstitute = () => {
+    // Validate form
+    if (!newInstitute.name || !newInstitute.location || !newInstitute.adminName || !newInstitute.adminEmail) {
+      toast.error('Please fill all required fields');
+      return;
+    }
+    
+    // Create new institute object
+    const newInstituteObj: Institute = {
+      id: `inst-${Date.now()}`,
+      name: newInstitute.name,
+      location: newInstitute.location,
+      admin: {
+        id: `admin-${Date.now()}`,
+        name: newInstitute.adminName,
+        email: newInstitute.adminEmail,
+        phone: newInstitute.adminPhone
+      },
+      stats: {
+        teachers: 0,
+        students: 0,
+        courses: 0,
+        monthlyData: [
+          { month: 'Jan', studentCount: 0, courseCount: 0 },
+          { month: 'Feb', studentCount: 0, courseCount: 0 },
+          { month: 'Mar', studentCount: 0, courseCount: 0 },
+          { month: 'Apr', studentCount: 0, courseCount: 0 },
+          { month: 'May', studentCount: 0, courseCount: 0 },
+          { month: 'Jun', studentCount: 0, courseCount: 0 }
+        ]
+      },
+      dashboardVisibility: {
+        admin: {
+          'admin-dashboard': true,
+          'admin-courses': true,
+          'admin-schedule': true,
+          'admin-user-section': true,
+          'admin-content-review': true,
+          'admin-approvals': true
+        },
+        teacher: {
+          'teacher-dashboard': true,
+          'teacher-courses': true,
+          'teacher-schedule': true,
+          'teacher-materials': true,
+          'teacher-students': true,
+          'teacher-exams': true
+        },
+        student: {
+          'student-dashboard': true,
+          'student-courses': true,
+          'student-schedule': true,
+          'student-progress': true,
+          'student-tests': true
+        }
       }
-      return admin;
+    };
+    
+    // Add to institutes list
+    setInstitutes([...institutes, newInstituteObj]);
+    
+    // Reset form
+    setNewInstitute({
+      name: '',
+      location: '',
+      adminName: '',
+      adminEmail: '',
+      adminPhone: ''
     });
     
-    setAdmins(updatedAdmins);
-    
-    if (selectedAdmin && selectedAdmin.id === adminId) {
-      const updatedAdmin = updatedAdmins.find(a => a.id === adminId);
-      if (updatedAdmin) {
-        setSelectedAdmin(updatedAdmin);
-      }
-    }
-    
-    toast.success('Admin status updated successfully');
+    toast.success('New institute added successfully');
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Superadmin Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome, {user?.name} - Manage all institutes and admins
-          </p>
+          <h2 className="text-3xl font-bold text-school-brown">Superadmin Dashboard</h2>
+          <p className="text-muted-foreground">Manage all institutes, admins and system settings</p>
         </div>
-        <div className="flex space-x-2">
-          <div className="relative w-64">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search institutes or admins..."
-              className="pl-8"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <Button onClick={() => setShowAddInstituteForm(true)}>
-            <Plus className="mr-1 h-4 w-4" /> Add Institute
-          </Button>
-          <Button onClick={() => setShowAddAdminForm(true)} variant="outline">
-            <Plus className="mr-1 h-4 w-4" /> Add Admin
-          </Button>
+        <div className="flex items-center gap-3">
+          <Badge className="bg-school-indigo text-white">Superadmin</Badge>
         </div>
       </div>
-
-      {showAddInstituteForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Add New Institute</CardTitle>
-            <CardDescription>Create a new institute in the system</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Institute Name</Label>
-                <Input 
-                  id="name" 
-                  value={newInstituteName}
-                  onChange={(e) => setNewInstituteName(e.target.value)}
-                  placeholder="e.g. Western University"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="location">Location</Label>
-                <Input 
-                  id="location" 
-                  value={newInstituteLocation}
-                  onChange={(e) => setNewInstituteLocation(e.target.value)}
-                  placeholder="e.g. California, USA"
-                />
-              </div>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="bg-muted/50">
+          <TabsTrigger value="institutes" className="data-[state=active]:bg-school-indigo data-[state=active]:text-white">
+            Institutes & Admins
+          </TabsTrigger>
+          <TabsTrigger value="institute-details" className="data-[state=active]:bg-school-indigo data-[state=active]:text-white" disabled={!selectedInstitute}>
+            Institute Details
+          </TabsTrigger>
+          <TabsTrigger value="system-settings" className="data-[state=active]:bg-school-indigo data-[state=active]:text-white">
+            System Settings
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="institutes" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div className="relative w-full max-w-sm">
+              <Input
+                placeholder="Search institutes or admins..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-white border-school-beige/50 pl-3"
+              />
             </div>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" onClick={() => setShowAddInstituteForm(false)}>Cancel</Button>
-            <Button onClick={handleAddInstitute}>Create Institute</Button>
-          </CardFooter>
-        </Card>
-      )}
-
-      {showAddAdminForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Add New Admin</CardTitle>
-            <CardDescription>Assign an admin to an institute</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="adminName">Admin Name</Label>
-                <Input 
-                  id="adminName" 
-                  value={newAdminName}
-                  onChange={(e) => setNewAdminName(e.target.value)}
-                  placeholder="Full name"
-                />
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="bg-school-indigo hover:bg-school-indigo/90 text-white">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Institute
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle className="text-school-brown">Add New Institute</DialogTitle>
+                  <DialogDescription>
+                    Create a new institute and assign an admin to manage it.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="inst-name" className="text-school-brown">Institute Name</Label>
+                    <Input
+                      id="inst-name"
+                      value={newInstitute.name}
+                      onChange={(e) => setNewInstitute({...newInstitute, name: e.target.value})}
+                      placeholder="e.g. Cambridge Academy"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="inst-location" className="text-school-brown">Location</Label>
+                    <Input
+                      id="inst-location"
+                      value={newInstitute.location}
+                      onChange={(e) => setNewInstitute({...newInstitute, location: e.target.value})}
+                      placeholder="e.g. Boston, MA"
+                    />
+                  </div>
+                  <Separator />
+                  <h4 className="font-medium text-school-brown">Admin Details</h4>
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-name" className="text-school-brown">Admin Name</Label>
+                    <Input
+                      id="admin-name"
+                      value={newInstitute.adminName}
+                      onChange={(e) => setNewInstitute({...newInstitute, adminName: e.target.value})}
+                      placeholder="e.g. John Smith"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-email" className="text-school-brown">Admin Email</Label>
+                    <Input
+                      id="admin-email"
+                      type="email"
+                      value={newInstitute.adminEmail}
+                      onChange={(e) => setNewInstitute({...newInstitute, adminEmail: e.target.value})}
+                      placeholder="e.g. admin@example.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-phone" className="text-school-brown">Admin Phone (Optional)</Label>
+                    <Input
+                      id="admin-phone"
+                      value={newInstitute.adminPhone}
+                      onChange={(e) => setNewInstitute({...newInstitute, adminPhone: e.target.value})}
+                      placeholder="e.g. +1 (555) 123-4567"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setNewInstitute({
+                      name: '',
+                      location: '',
+                      adminName: '',
+                      adminEmail: '',
+                      adminPhone: ''
+                    })}
+                    className="border-school-beige text-school-brown"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleAddInstitute}
+                    className="bg-school-indigo hover:bg-school-indigo/90 text-white"
+                  >
+                    Add Institute
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+          
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {filteredInstitutes.length > 0 ? filteredInstitutes.map((institute) => (
+              <Card key={institute.id} className="cursor-pointer hover:border-school-indigo/50 transition-all card-shadow-hover">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xl text-school-brown flex items-center justify-between">
+                    {institute.name}
+                    <Building className="h-5 w-5 text-school-indigo" />
+                  </CardTitle>
+                  <CardDescription>
+                    {institute.location}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pb-2">
+                  <div className="space-y-1">
+                    <div className="font-medium text-sm text-school-brown">Admin: {institute.admin.name}</div>
+                    <div className="text-xs text-muted-foreground">{institute.admin.email}</div>
+                  </div>
+                  <div className="mt-4 flex justify-between text-sm">
+                    <div>
+                      <span className="font-medium text-school-brown">{institute.stats.teachers}</span> Teachers
+                    </div>
+                    <div>
+                      <span className="font-medium text-school-brown">{institute.stats.students}</span> Students
+                    </div>
+                    <div>
+                      <span className="font-medium text-school-brown">{institute.stats.courses}</span> Courses
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    onClick={() => handleSelectInstitute(institute)}
+                    variant="outline"
+                    className="w-full border-school-indigo/30 text-school-indigo hover:bg-school-indigo hover:text-white"
+                  >
+                    View Details
+                  </Button>
+                </CardFooter>
+              </Card>
+            )) : (
+              <div className="col-span-full text-center py-10">
+                <div className="text-muted-foreground">No institutes found matching your search.</div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="adminEmail">Email</Label>
-                <Input 
-                  id="adminEmail" 
-                  type="email"
-                  value={newAdminEmail}
-                  onChange={(e) => setNewAdminEmail(e.target.value)}
-                  placeholder="email@example.com"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="adminInstitute">Assign to Institute</Label>
-                <select 
-                  id="adminInstitute"
-                  value={newAdminInstitute}
-                  onChange={(e) => setNewAdminInstitute(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="institute-details" className="space-y-6">
+          {selectedInstitute && (
+            <>
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-bold text-school-brown flex items-center gap-2">
+                    <Building className="h-5 w-5 text-school-indigo" />
+                    {selectedInstitute.name}
+                  </h3>
+                  <p className="text-muted-foreground">{selectedInstitute.location}</p>
+                </div>
+                <Button 
+                  onClick={() => setActiveTab('institutes')}
+                  variant="outline"
+                  className="border-school-indigo/30 text-school-indigo hover:bg-school-indigo hover:text-white"
                 >
-                  <option value="">Select an institute</option>
-                  {institutes.filter(inst => !admins.some(a => a.instituteId === inst.id)).map(institute => (
-                    <option key={institute.id} value={institute.id}>
-                      {institute.name}
-                    </option>
-                  ))}
-                </select>
+                  Back to Institutes
+                </Button>
               </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" onClick={() => setShowAddAdminForm(false)}>Cancel</Button>
-            <Button onClick={handleAddAdmin}>Assign Admin</Button>
-          </CardFooter>
-        </Card>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle>Overview</CardTitle>
-            <CardDescription>System-wide statistics</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <div className="bg-primary/10 p-2 rounded-full">
-                  <Building className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Institutes</p>
-                  <p className="text-2xl font-bold">{institutes.length}</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="bg-primary/10 p-2 rounded-full">
-                  <User className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Admins</p>
-                  <p className="text-2xl font-bold">{admins.length}</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="bg-primary/10 p-2 rounded-full">
-                  <Users className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Students</p>
-                  <p className="text-2xl font-bold">
-                    {institutes.reduce((sum, inst) => sum + inst.totalStudents, 0)}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="bg-primary/10 p-2 rounded-full">
-                  <BookOpen className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Courses</p>
-                  <p className="text-2xl font-bold">
-                    {institutes.reduce((sum, inst) => sum + inst.totalCourses, 0)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="md:col-span-2">
-          <CardHeader className="pb-2">
-            <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="institutes">Institutes</TabsTrigger>
-                <TabsTrigger value="admins">Admins</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </CardHeader>
-          <CardContent className="p-0">
-            <TabsContent value="institutes" className="m-0">
-              <ScrollArea className="h-[400px] p-4">
-                <div className="space-y-4">
-                  {filteredInstitutes.map(institute => (
-                    <div 
-                      key={institute.id} 
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedInstitute?.id === institute.id 
-                          ? 'bg-muted border-primary' 
-                          : 'hover:bg-muted/50'
-                      }`}
-                      onClick={() => handleInstituteSelect(institute)}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-medium">{institute.name}</h3>
-                          <p className="text-sm text-muted-foreground">{institute.location}</p>
-                        </div>
-                        <Badge variant={institute.id === selectedInstitute?.id ? "default" : "outline"}>
-                          {institute.totalStudents} Students
+              
+              <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
+                <Card className="lg:col-span-1 bg-gradient-to-br from-white to-school-cream/30">
+                  <CardHeader>
+                    <CardTitle className="text-school-brown">Admin Details</CardTitle>
+                    <CardDescription>Admin assigned to this institute</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="h-12 w-12 rounded-full bg-school-indigo flex items-center justify-center text-white">
+                        <User className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-school-brown">{selectedInstitute.admin.name}</div>
+                        <div className="text-sm text-muted-foreground">Institute Admin</div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Email:</span>
+                        <span className="font-medium text-school-brown">{selectedInstitute.admin.email}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Phone:</span>
+                        <span className="font-medium text-school-brown">{selectedInstitute.admin.phone || 'Not provided'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Status:</span>
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                          Active
                         </Badge>
                       </div>
-                      <div className="grid grid-cols-3 gap-2 mt-2 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">Teachers</p>
-                          <p className="font-medium">{institute.totalTeachers}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Courses</p>
-                          <p className="font-medium">{institute.totalCourses}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Created</p>
-                          <p className="font-medium">{new Date(institute.createdAt).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                      <div className="mt-2 text-sm">
-                        <p className="text-muted-foreground">Admin</p>
-                        <p className="font-medium">
-                          {admins.find(a => a.instituteId === institute.id)?.name || 'No admin assigned'}
-                        </p>
-                      </div>
                     </div>
-                  ))}
-                  
-                  {filteredInstitutes.length === 0 && (
-                    <div className="text-center p-4 text-muted-foreground">
-                      No institutes found matching your search.
-                    </div>
-                  )}
+                  </CardContent>
+                  <CardFooter className="flex-col gap-3">
+                    <Button className="w-full bg-school-indigo hover:bg-school-indigo/90">
+                      <Mail className="mr-2 h-4 w-4" />
+                      Contact Admin
+                    </Button>
+                    <Button variant="outline" className="w-full border-school-indigo/30 text-school-indigo hover:bg-school-indigo hover:text-white">
+                      <Shield className="mr-2 h-4 w-4" />
+                      Manage Permissions
+                    </Button>
+                  </CardFooter>
+                </Card>
+                
+                <Card className="lg:col-span-2">
+                  <CardHeader>
+                    <CardTitle className="text-school-brown">Institute Statistics</CardTitle>
+                    <CardDescription>Performance and growth metrics</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <InstituteStatsCharts data={selectedInstitute} />
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-school-brown">Dashboard Visibility Controls</CardTitle>
+                  <CardDescription>Manage which sections are visible to different user roles</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue="admin-visibility" className="w-full">
+                    <TabsList className="mb-4 bg-muted/50">
+                      <TabsTrigger value="admin-visibility" className="data-[state=active]:bg-school-brown data-[state=active]:text-white">
+                        Admin Sections
+                      </TabsTrigger>
+                      <TabsTrigger value="teacher-visibility" className="data-[state=active]:bg-school-yellow data-[state=active]:text-school-brown">
+                        Teacher Sections
+                      </TabsTrigger>
+                      <TabsTrigger value="student-visibility" className="data-[state=active]:bg-school-indigo data-[state=active]:text-white">
+                        Student Sections
+                      </TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="admin-visibility" className="mt-0">
+                      <ScrollArea className="h-[300px] rounded-md border p-4">
+                        <div className="space-y-4">
+                          {Object.values(dashboardModules.admin).map((module) => (
+                            <div key={module.id} className="flex items-center justify-between py-2">
+                              <div className="flex items-center gap-2">
+                                <module.icon className="h-5 w-5 text-school-brown" />
+                                <div>
+                                  <div className="font-medium text-school-brown">{module.name}</div>
+                                  <div className="text-xs text-muted-foreground">{module.description}</div>
+                                </div>
+                              </div>
+                              <Switch 
+                                checked={selectedInstitute.dashboardVisibility.admin[module.id]}
+                                onCheckedChange={(value) => handleVisibilityToggle('admin', module.id, value)}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </TabsContent>
+                    
+                    <TabsContent value="teacher-visibility" className="mt-0">
+                      <ScrollArea className="h-[300px] rounded-md border p-4">
+                        <div className="space-y-4">
+                          {Object.values(dashboardModules.teacher).map((module) => (
+                            <div key={module.id} className="flex items-center justify-between py-2">
+                              <div className="flex items-center gap-2">
+                                <module.icon className="h-5 w-5 text-school-brown" />
+                                <div>
+                                  <div className="font-medium text-school-brown">{module.name}</div>
+                                  <div className="text-xs text-muted-foreground">{module.description}</div>
+                                </div>
+                              </div>
+                              <Switch 
+                                checked={selectedInstitute.dashboardVisibility.teacher[module.id]}
+                                onCheckedChange={(value) => handleVisibilityToggle('teacher', module.id, value)}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </TabsContent>
+                    
+                    <TabsContent value="student-visibility" className="mt-0">
+                      <ScrollArea className="h-[300px] rounded-md border p-4">
+                        <div className="space-y-4">
+                          {Object.values(dashboardModules.student).map((module) => (
+                            <div key={module.id} className="flex items-center justify-between py-2">
+                              <div className="flex items-center gap-2">
+                                <module.icon className="h-5 w-5 text-school-brown" />
+                                <div>
+                                  <div className="font-medium text-school-brown">{module.name}</div>
+                                  <div className="text-xs text-muted-foreground">{module.description}</div>
+                                </div>
+                              </div>
+                              <Switch 
+                                checked={selectedInstitute.dashboardVisibility.student[module.id]}
+                                onCheckedChange={(value) => handleVisibilityToggle('student', module.id, value)}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    onClick={() => {
+                      toast.success('Dashboard visibility settings saved');
+                    }}
+                    className="ml-auto bg-school-indigo hover:bg-school-indigo/90"
+                  >
+                    Save Visibility Settings
+                  </Button>
+                </CardFooter>
+              </Card>
+            </>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="system-settings" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-school-brown">System Settings</CardTitle>
+              <CardDescription>Configure global system settings and defaults</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="system-name" className="text-school-brown">System Name</Label>
+                  <Input id="system-name" defaultValue="ScholarWay Learning Management System" />
                 </div>
-              </ScrollArea>
-            </TabsContent>
-            <TabsContent value="admins" className="m-0">
-              <ScrollArea className="h-[400px] p-4">
-                <div className="space-y-4">
-                  {filteredAdmins.map(admin => (
-                    <div 
-                      key={admin.id} 
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedAdmin?.id === admin.id 
-                          ? 'bg-muted border-primary' 
-                          : 'hover:bg-muted/50'
-                      }`}
-                      onClick={() => handleAdminSelect(admin)}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Avatar>
-                          <AvatarImage src={admin.avatarUrl} />
-                          <AvatarFallback>{admin.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex justify-between">
-                            <h3 className="font-medium">{admin.name}</h3>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className={`${admin.status === 'active' ? 'text-green-500' : 'text-red-500'}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleAdminStatus(admin.id);
-                              }}
-                            >
-                              {admin.status === 'active' ? 'Active' : 'Inactive'}
-                            </Button>
-                          </div>
-                          <p className="text-sm text-muted-foreground">{admin.email}</p>
-                        </div>
-                      </div>
-                      <div className="mt-2 text-sm">
-                        <p className="text-muted-foreground">Institute</p>
-                        <p className="font-medium">
-                          {institutes.find(i => i.id === admin.instituteId)?.name || 'Unknown'}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {filteredAdmins.length === 0 && (
-                    <div className="text-center p-4 text-muted-foreground">
-                      No admins found matching your search.
-                    </div>
-                  )}
+                <div className="space-y-2">
+                  <Label htmlFor="system-domain" className="text-school-brown">System Domain</Label>
+                  <Input id="system-domain" defaultValue="scholarway.edu" />
                 </div>
-              </ScrollArea>
-            </TabsContent>
-          </CardContent>
-        </Card>
-      </div>
-
-      {selectedInstitute && (
-        <div className="space-y-6">
-          <h2 className="text-xl font-semibold">
-            {selectedInstitute.name} Details
-            {selectedAdmin && selectedAdmin.status === 'inactive' && (
-              <Badge variant="outline" className="ml-2 bg-yellow-50 text-yellow-700 border-yellow-200">
-                Admin Inactive
-              </Badge>
-            )}
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Institute Statistics</CardTitle>
-                <CardDescription>
-                  Performance metrics for {selectedInstitute.name}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-8">
+                <div className="space-y-2">
+                  <Label htmlFor="system-contact-email" className="text-school-brown">Support Email</Label>
+                  <Input id="system-contact-email" defaultValue="support@scholarway.edu" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="system-timezone" className="text-school-brown">Default Timezone</Label>
+                  <Input id="system-timezone" defaultValue="UTC-5 (Eastern Time)" />
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div className="space-y-4">
+                <h4 className="font-medium text-school-brown">System Features</h4>
+                
+                <div className="flex items-center justify-between py-2">
                   <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="text-sm font-medium">Students Growth</h4>
-                      <Badge variant="outline">{selectedInstitute.totalStudents} total</Badge>
-                    </div>
-                    <div className="h-[120px]">
-                      <BarChart 
-                        data={[
-                          { name: 'Jan', value: Math.floor(selectedInstitute.totalStudents * 0.7) },
-                          { name: 'Feb', value: Math.floor(selectedInstitute.totalStudents * 0.75) },
-                          { name: 'Mar', value: Math.floor(selectedInstitute.totalStudents * 0.8) },
-                          { name: 'Apr', value: Math.floor(selectedInstitute.totalStudents * 0.85) },
-                          { name: 'May', value: Math.floor(selectedInstitute.totalStudents * 0.9) },
-                          { name: 'Jun', value: selectedInstitute.totalStudents }
-                        ]}
-                        yAxisWidth={40}
-                      />
-                    </div>
+                    <div className="font-medium text-school-brown">AI Learning Assistant</div>
+                    <div className="text-xs text-muted-foreground">Enable AI-powered learning assistant for all users</div>
                   </div>
-                  
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="text-sm font-medium">Resource Distribution</h4>
-                    </div>
-                    <div className="h-[120px]">
-                      <PieChart 
-                        data={[
-                          { name: 'Teachers', value: selectedInstitute.totalTeachers, color: 'hsl(var(--primary))' },
-                          { name: 'Courses', value: selectedInstitute.totalCourses, color: 'hsl(var(--muted))' },
-                          { name: 'Students', value: Math.min(selectedInstitute.totalStudents / 20, 100), color: 'hsl(var(--secondary))' }
-                        ]}
-                      />
-                    </div>
-                  </div>
+                  <Switch defaultChecked />
                 </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Dashboard Visibility Controls</CardTitle>
-                <CardDescription>
-                  Control which features are visible to users at {selectedInstitute.name}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Tabs defaultValue="admin">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="admin">Admin</TabsTrigger>
-                    <TabsTrigger value="teacher">Teacher</TabsTrigger>
-                    <TabsTrigger value="student">Student</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="admin" className="space-y-4 p-4">
-                    {Object.entries(dashboardVisibility.find(v => v.instituteId === selectedInstitute.id)?.admin || {}).map(([key, enabled]) => (
-                      <div key={key} className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <div className="font-medium capitalize">
-                            {key.replace(/([A-Z])/g, ' $1').trim()}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {enabled ? (
-                              <span className="flex items-center text-green-600">
-                                <Eye className="mr-1 h-3 w-3" /> Visible
-                              </span>
-                            ) : (
-                              <span className="flex items-center text-red-600">
-                                <EyeOff className="mr-1 h-3 w-3" /> Hidden
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <Switch
-                          checked={!!enabled}
-                          onCheckedChange={() => handleVisibilityToggle(selectedInstitute.id, 'admin', key)}
-                        />
-                      </div>
-                    ))}
-                  </TabsContent>
-                  
-                  <TabsContent value="teacher" className="space-y-4 p-4">
-                    {Object.entries(dashboardVisibility.find(v => v.instituteId === selectedInstitute.id)?.teacher || {}).map(([key, enabled]) => (
-                      <div key={key} className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <div className="font-medium capitalize">
-                            {key.replace(/([A-Z])/g, ' $1').trim()}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {enabled ? (
-                              <span className="flex items-center text-green-600">
-                                <Eye className="mr-1 h-3 w-3" /> Visible
-                              </span>
-                            ) : (
-                              <span className="flex items-center text-red-600">
-                                <EyeOff className="mr-1 h-3 w-3" /> Hidden
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <Switch
-                          checked={!!enabled}
-                          onCheckedChange={() => handleVisibilityToggle(selectedInstitute.id, 'teacher', key)}
-                        />
-                      </div>
-                    ))}
-                  </TabsContent>
-                  
-                  <TabsContent value="student" className="space-y-4 p-4">
-                    {Object.entries(dashboardVisibility.find(v => v.instituteId === selectedInstitute.id)?.student || {}).map(([key, enabled]) => (
-                      <div key={key} className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <div className="font-medium capitalize">
-                            {key.replace(/([A-Z])/g, ' $1').trim()}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {enabled ? (
-                              <span className="flex items-center text-green-600">
-                                <Eye className="mr-1 h-3 w-3" /> Visible
-                              </span>
-                            ) : (
-                              <span className="flex items-center text-red-600">
-                                <EyeOff className="mr-1 h-3 w-3" /> Hidden
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <Switch
-                          checked={!!enabled}
-                          onCheckedChange={() => handleVisibilityToggle(selectedInstitute.id, 'student', key)}
-                        />
-                      </div>
-                    ))}
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-              <CardFooter className="border-t py-3">
-                <Button variant="outline" className="w-full">Save Visibility Settings</Button>
-              </CardFooter>
-            </Card>
-          </div>
-        </div>
-      )}
+                
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <div className="font-medium text-school-brown">Advanced Analytics</div>
+                    <div className="text-xs text-muted-foreground">Enable detailed analytics for admins and teachers</div>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                
+                <div className="flex items-center justify-between py-2">
+                  <div>
+                    <div className="font-medium text-school-brown">Maintenance Mode</div>
+                    <div className="text-xs text-muted-foreground">Put the system in maintenance mode (blocks all non-superadmin access)</div>
+                  </div>
+                  <Switch />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                variant="outline" 
+                className="border-school-indigo/30 text-school-indigo hover:bg-school-indigo hover:text-white mr-2"
+              >
+                Reset to Defaults
+              </Button>
+              <Button 
+                className="bg-school-indigo hover:bg-school-indigo/90"
+                onClick={() => toast.success('System settings saved successfully')}
+              >
+                Save Settings
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
